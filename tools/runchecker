@@ -1,0 +1,340 @@
+#!/usr/bin/python
+"""
+    Copyright (C) 2014 Foxel http://www.foxel.ch
+    Author: Kevin Velickovic
+                                       
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+                                       
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+                                       
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+import os
+import glob
+import re
+import time
+import sys, getopt
+import collections
+import hashlib
+from collections import defaultdict
+
+def Banner():
+    print "**************************************"
+    print "* runchecker 0.9 by Kevin Velickovic *"
+    print "**************************************\n"
+
+Banner()
+
+
+FileList_first = [[]]
+FileList_ALL = [[]]
+FileList_Validated = [[]]
+
+JP4_FOLDER = ""
+TRASH_FOLDER = ""
+OUT_FILE = ""
+LOG_FILE = ""
+MISS_FILE = 0
+REF_INDEX = 1
+DUP_FILE = ""
+
+V_OPT = 0
+T_OPT = 0
+W_OPT = 0
+L_OPT = 0
+M_OPT = 0
+R_OPT = 0
+s_OPT = 0
+S_OPT = 0
+
+def main(argv):
+    global JP4_FOLDER, TRASH_FOLDER, OUT_FILE, LOG_FILE, MISS_FILE, DUP_FILE, REF_INDEX
+    global V_OPT, T_OPT, W_OPT, L_OPT, M_OPT, R_OPT, s_OPT, S_OPT
+
+    if(len(sys.argv) <= 1):
+        print '%s -i <jp4 folder> [-t <trash folder> -v <Validate all trashs> -w <Write file paths to file> -l <Write stdout to a log file>]' % sys.argv[0]
+        sys.exit(2)
+
+    try:
+        opts, args = getopt.getopt(argv,"i:t:w:l:m:r:S:vs")
+    except getopt.GetoptError:
+        print '%s -i <jp4 folder> [-t <trash folder> -v <Validate all trashs> -s <Check for duplicated images> -S <Write duplicated files> -w <Write file paths to file> -m <write all missed files in timestamp check> -l <Write stdout to a log file> -r <Ref index>]' % sys.argv[0]
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt in ("-i"):
+            JP4_FOLDER = arg
+        elif opt in ("-t"):
+            T_OPT = 1
+            TRASH_FOLDER = arg
+        elif opt in ("-v"):
+            V_OPT = 1
+        elif opt in ("-w"):
+            W_OPT = 1
+            OUT_FILE = arg
+        elif opt in ("-m"):
+            M_OPT = 1
+            MISS_FILE = arg
+        elif opt in ("-l"):
+            L_OPT = 1
+            LOG_FILE = arg
+        elif opt in ("-r"):
+            R_OPT = 1
+            REF_INDEX = int(arg)
+        elif opt in ("-s"):
+        	s_OPT = 1
+        elif opt in ("-S"):
+        	S_OPT = 1
+        	DUP_FILE = arg
+        else:
+            print '%s -i <jp4 folder> [-t <trash folder> -v <Validate all trashs> -w <Write file paths to file> -l <Write stdout to a log file>]' % sys.argv[0]
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
+
+for item in glob.glob(JP4_FOLDER + "*.jp4"):
+    Splitted = re.split('(\d+)\_(\d+)\_(\d)\.jp4', os.path.basename(item))
+
+    Toadd = int("%s%s%s" % (Splitted[1], Splitted[2], Splitted[3]))
+
+    FileList_ALL.append(  Toadd  )
+
+    if "_%d.jp4" % REF_INDEX in item:
+        FileList_first.append(Splitted)
+
+if (T_OPT == 1):
+    for item in glob.glob(TRASH_FOLDER + "*.jp4"):
+        Splitted = re.split('(\d+)\_(\d+)\_(\d)\.jp4', os.path.basename(item))
+
+        Toadd = int("%s%s%s" % (Splitted[1], Splitted[2], Splitted[3]))
+
+        FileList_ALL.append(  Toadd  )
+
+        if "_%d.jp4" % REF_INDEX in item:
+            FileList_first.append(Splitted)
+
+TRASHED = 0
+FileList_first = sorted(FileList_first)
+FileList_ALL = sorted(FileList_ALL)
+
+FILENAME_CURR = ""
+FILENAME_NEXT = ""
+
+TS_POINTER = 0
+TS_POINTER_N = 0
+TS_POINTER_START = 0
+DELAY = 0
+
+# Matchs = 0
+FatUnmatchs = 0
+Unmatchs = 0
+Unmatchs_Array = []
+
+IDX = 0
+FIRSTLAUNCH = 1
+FINAL_OUT = ""
+
+RECORDING_TIME = 0
+
+INTEGRITY_STATS = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+TRASH_JP4 = 0
+DUPS = 0
+DUPS_U = 0
+
+if (M_OPT == 1):
+    MFH = open(MISS_FILE, 'w')
+
+if (S_OPT == 1):
+    DFH = open(DUP_FILE, 'w')
+    DFAH = open("all_%s" % DUP_FILE, 'w')
+
+def sha1sum(filename, blocksize=65536):
+    hash = hashlib.sha1()
+    with open(filename, "rb") as f:
+        for block in iter(lambda: f.read(blocksize), ""):
+            hash.update(block)
+    return hash.hexdigest()
+
+def CheckDups(ImageItem):
+	global DUPS, DUPS_U, FINAL_OUT
+
+	Files_Array = []
+
+	for i in range(1, 10):
+		Fname = "%s%s_%s_%d.jp4" % (JP4_FOLDER, ImageItem[1], ImageItem[2], i)
+
+		if os.path.isfile(Fname):
+			Files_Array.append([i, os.path.getsize(Fname)])
+		else:
+			print "\n\033[31mMISSING IMAGE IN PAIR!: %s\033[39m" % Fname
+			FINAL_OUT += "\n\033[31mMISSING IMAGE IN PAIR!: %s\033[39m" % Fname
+			return
+
+	Sizes_Array = []
+	for i2 in Files_Array:
+		Sizes_Array.append(i2[1])
+
+	D = defaultdict(list)
+	for i,item in enumerate(Sizes_Array):
+	    D[item].append(i)
+	D = {k:v for k,v in D.items() if len(v)>1}
+
+	FIRST_HASH = ""
+	Duplicated_Files = []
+
+	DUPS_U += len(D)
+
+	for i in D:
+		for k in D[i]:
+			Fname = "%s%s_%s_%d.jp4" % (JP4_FOLDER, ImageItem[1], ImageItem[2], k+1)
+
+			if len(FIRST_HASH) == 0:
+				FIRST_HASH = sha1sum(Fname)
+
+			if(FIRST_HASH in sha1sum(Fname)):
+				if (S_OPT == 1):
+					DFH.write("%s\n" % Fname)
+
+				Duplicated_Files.append(Fname)
+				DUPS += 1
+
+	
+	if(len(Duplicated_Files) > 0):
+
+		if (S_OPT == 1):
+			for p in range(1, 10):
+				DFAH.write("%s%s_%s_%d.jp4\n" % (JP4_FOLDER, ImageItem[1], ImageItem[2], p))
+
+		FINAL_OUT += "\033[31m\n[%d] Duplicates found: %s\033[39m" % (DUPS_U, Duplicated_Files)
+
+
+def CheckIntegrity(ImageItem):
+    global FINAL_OUT, TRASH_JP4, TRASH_JP4
+    
+    VALID = 1
+
+    if (V_OPT == 1):
+        FileList_Validated.append( ImageItem )
+        return 0
+
+    for i in range(1, 10):
+        if not int("%s%s%s" % (ImageItem[1], ImageItem[2], str(i))) in FileList_ALL:
+            FINAL_OUT += "\n[%d] \033[31m%s_%s_%s.jp4 not found ignoring sequence\033[39m" % (TRASH_JP4 + 1, ImageItem[1], ImageItem[2], str(i))
+
+            if (M_OPT == 1):
+                MFH.write("%s%s_%s_%s.jp4\n" % (JP4_FOLDER, ImageItem[1], ImageItem[2], str(i)))
+
+            INTEGRITY_STATS[i - 1] += 1
+            TRASH_JP4 += 1
+            VALID = 0
+            break
+
+    if VALID:
+        FileList_Validated.append( ImageItem )
+
+if(s_OPT == 1):
+    FINAL_OUT += "\n****** Duplicates check ******"
+    for key in range(1, len(FileList_first)):
+    	CheckDups(FileList_first[key])
+
+        sys.stdout.write("\r[Duplicates check] %d/%d done..." % (key, len(FileList_first) - 1))
+        sys.stdout.flush()
+
+        if(key >= len(FileList_first) - 1):
+            print ""
+
+if(T_OPT == 1):
+    FINAL_OUT += "\n****** Integrity check ******"
+    for key in range(1, len(FileList_first)):
+
+        CheckIntegrity(FileList_first[key])
+
+        sys.stdout.write("\r[Integrity check] %d/%d done..." % (key, len(FileList_first) - 1))
+        sys.stdout.flush()
+
+        if(key >= len(FileList_first) - 1):
+            print ""
+    
+    FileList_first = sorted(FileList_Validated)
+
+FINAL_OUT += "\n\n****** Timestamps check ******\n"
+
+
+if (W_OPT == 1):
+    f = open(OUT_FILE, 'w')
+    for key in range(1, len(FileList_first)):
+        for i in range(1, 10):
+            f.write("%s%d_%d_%d.jp4\n" % (JP4_FOLDER, int(FileList_first[key][1]), int(FileList_first[key][2]), i))
+
+for key in range(1, len(FileList_first)):
+    sys.stdout.write("\r[Timestamps check] %d/%d done..." % (key, len(FileList_first) - 1))
+    sys.stdout.flush()
+
+    item = FileList_first[key]
+
+    FILENAME_CURR = "%d_%d_%d.jp4" % (int(FileList_first[key][1]), int(FileList_first[key][2]), REF_INDEX)
+
+    if (key < (len(FileList_first) - 1)):
+        FILENAME_NEXT = "%d_%d_%d.jp4" % (int(FileList_first[key+1][1]), int(FileList_first[key+1][2]), REF_INDEX)
+        TS_POINTER_N = float(FileList_first[key+1][1]) + (float(FileList_first[key+1][2]) / 1000000)
+
+    if (TS_POINTER == 0):
+        TS_POINTER = float(FileList_first[key][1]) + (float(FileList_first[key][2]) / 1000000)
+        DELAY = TS_POINTER_N - TS_POINTER
+
+    if (FIRSTLAUNCH == 1):
+        FINAL_OUT +=  "\033[33mCheck started at image %s with a delay of %fs\033[39m\n" % (FILENAME_CURR, DELAY)
+        TS_POINTER_START = float(FileList_first[key][1]) + (float(FileList_first[key][2]) / 1000000)
+        FIRSTLAUNCH = 0
+
+    if((TS_POINTER + DELAY) == TS_POINTER_N):
+        TS_POINTER += DELAY
+        # Matchs += 1
+    else:
+        CURR = float(FileList_first[key][1]) + (float(FileList_first[key][2]) / 1000000)
+        RECORDING_TIME += (CURR - TS_POINTER_START)
+
+        if (key < (len(FileList_first) - 1)):
+            FINAL_OUT +=  "\033[31mInterrupt detected at image %s (%s, %f)\033[39m\n" % (FILENAME_CURR, time.strftime('%Hh:%Mm:%Ss', time.gmtime(CURR - TS_POINTER_START)), (CURR - TS_POINTER_START))
+        else:
+            FINAL_OUT +=  "\033[36mEnd of sequences at image %s (%s, %f)\033[39m\n" % (FILENAME_CURR, time.strftime('%Hh:%Mm:%Ss', time.gmtime(CURR - TS_POINTER_START)), (CURR - TS_POINTER_START))
+        
+        if (key < (len(FileList_first) - 1)):
+            FINAL_OUT +=  "\tTimestamp differ by %fs (%s)\n" % ((TS_POINTER_N - TS_POINTER), time.strftime('%Hh:%Mm:%Ss', time.gmtime(TS_POINTER_N - TS_POINTER)))
+            Unmatchs_Array.append(TS_POINTER_N - TS_POINTER)
+
+        if (key < (len(FileList_first) - 1)):
+            TS_POINTER = float(FileList_first[key+1][1]) + (float(FileList_first[key+1][2]) / 1000000)
+            TS_POINTER_N = float(FileList_first[key+2][1]) + (float(FileList_first[key+2][2]) / 1000000)
+        DELAY = TS_POINTER_N - TS_POINTER
+
+        Unmatchs += 1
+        FIRSTLAUNCH = 1
+
+    IDX += 1
+
+FINAL_TEXT = "%s\nStatistics\n \
+      \tTotal images checked: %d\n\
+      \tTotal interrupts: %d (%f%%)\n\
+      \tMissing JP4s: %d\n\
+      \tDuplicated JP4s: %d\n\
+      \tSame size duplicated JP4s: %d\n\
+      \tTotal runs: %d\n\
+      \tTotal recording time: %s\n\
+      \tIntegrity stats: %s\n\
+      \tInterrupts delays: %s\n\
+      " % (FINAL_OUT, IDX, Unmatchs, ((float(Unmatchs) / float(IDX)) * 100), TRASH_JP4, DUPS, DUPS_U, Unmatchs, time.strftime('%Hh:%Mm:%Ss', time.gmtime(RECORDING_TIME)), INTEGRITY_STATS, sorted(Unmatchs_Array))
+
+print FINAL_TEXT
+
+if (L_OPT == 1):
+    ansi_escape = re.compile(r'\x1b[^m]*m')
+    f = open(LOG_FILE, 'w')
+    f.write(ansi_escape.sub('', FINAL_TEXT))
