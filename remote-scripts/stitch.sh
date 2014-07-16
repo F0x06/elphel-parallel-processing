@@ -1,6 +1,6 @@
 #!/bin/sh
-
-# e4p_pprocessor - Eyesis 4Pi GNU Parallel Processor
+#
+# stitch.sh
 #
 # Copyright (c) 2013-2014 FOXEL SA - http://foxel.ch
 # Please read <http://foxel.ch/license> for more information.
@@ -8,8 +8,7 @@
 #
 # Author(s):
 #
-#      Luc Deschenaux <l.deschenaux@foxel.ch>
-#      Kevin Velickovic <k.velickovic@foxel.ch>
+#      Luc Deschenaux <luc.deschenaux@foxel.ch>
 #
 #
 # This file is part of the FOXEL project <http://foxel.ch>.
@@ -39,9 +38,6 @@
 
 set -e
 
-SRCDIR=/data/rmll/Montpellier_20140617/Montpellier_av_run_1_imagej_processed
-DSTDIR=/data/rmll/Montpellier_20140617/results
-t=1403179789_224762
 QUALITY=98
 LEVELS="0%,100%,1"
 
@@ -49,16 +45,13 @@ LOGDIR=$1
 [ -d "$LOGDIR" ] || mkdir -p $LOGDIR
 shift
 
-getParameters() {
-     [ -n "$1" ] && SRCDIR=$1
-     [ -n "$2" ] && DSTDIR=$2
-     [ -n "$3" ] && t=$3
-     [ -n "$4" ] && QUALITY=$4
-     [ -n "$5" ] && LEVELS=$5
-}
+SRCDIR=$1
+DSTDIR=$2
+TIMESTAMP=$3
+[ -n "$4" ] && QUALITY=$4
+[ -n "$5" ] && LEVELS=$5
 
-# needed because parallel --hashbong escape spaces
-getParameters $@
+t=$TIMESTAMP
 LOGFILE=$LOGDIR/$t.log
 
 {
@@ -76,6 +69,6 @@ LOGFILE=$LOGDIR/$t.log
      rm $DSTDIR/result_${t}_mid.tif
      rm $DSTDIR/result_${t}_bot.tif
 
-} 2>&1 | tee $LOGFILE 
+} 2>&1 | tee $LOGFILE
 
 

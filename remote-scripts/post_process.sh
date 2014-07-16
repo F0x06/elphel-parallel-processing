@@ -1,6 +1,6 @@
 #!/bin/sh
-
-# e4p_pprocessor - Eyesis 4Pi GNU Parallel Processor
+#
+# post_process.sh
 #
 # Copyright (c) 2013-2014 FOXEL SA - http://foxel.ch
 # Please read <http://foxel.ch/license> for more information.
@@ -8,8 +8,7 @@
 #
 # Author(s):
 #
-#      Luc Deschenaux <l.deschenaux@foxel.ch>
-#      Kevin Velickovic <k.velickovic@foxel.ch>
+#      Luc Deschenaux <luc.deschenaux@foxel.ch>
 #
 #
 # This file is part of the FOXEL project <http://foxel.ch>.
@@ -39,12 +38,13 @@
 
 FIJI=ImageJ-linux64
 
-if [ $# -ne 2 ] ; then
-  echo "usage: $(basename $0) <eyesis_correction_xml> <memory>"
+if [ $# -lt 1 ] ; then
+  echo "usage: $(basename $0) <eyesis_correction_xml> [ <memory> ]"
   exit 1
 fi
 
 XML="$1"
-MEM="$2"
+[ -n "$2" ] && MEM="$2"
+[ -z "$MEM" ] && MEM="7150m"
 
 exec $FIJI --headless --allow-multiple --mem $MEM --run Eyesis_Correction prefs=$XML 2>&1
