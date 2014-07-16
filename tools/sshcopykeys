@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-  sshcopykeys - SSH keys batch copy tool
+  e4p_pprocessor - Eyesis 4Pi GNU Parallel Processor
  
   Copyright (c) 2014 FOXEL SA - http://foxel.ch
   Please read <http://foxel.ch/license> for more information.

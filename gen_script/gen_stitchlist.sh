@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# gen_stitchlist.sh - Stitching job list generator
+# e4p_pprocessor - Eyesis 4Pi GNU Parallel Processor
 #
 # Copyright (c) 2013-2014 FOXEL SA - http://foxel.ch
 # Please read <http://foxel.ch/license> for more information.
