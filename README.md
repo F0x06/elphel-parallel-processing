@@ -5,7 +5,9 @@ Eyesis 4Pi GNU Parallel Processor.
 ### Requirements
 1. GNU parallel must be installed on all Workers (nodes) including the host machine that runs processing scripts, Install it with **sudo apt-get install parallel**
 2. Enblend must be installed on all Workers (nodes), Install it with **sudo apt-get install enblend**
-3. Fiji with Elphel plugins must be installed, ...
+3. Fiji with Elphel plugins
+    1. Fiji: http://fiji.sc/Fiji
+    2. Elphel ImageJ plugins: https://github.com/FoxelSA/imagej-elphel
 
 ### Documentation
 #### gen_scripts/gen_fijilist.sh (ImageJ processing joblist generator)
