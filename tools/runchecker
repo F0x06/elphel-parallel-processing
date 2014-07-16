@@ -26,14 +26,6 @@ import collections
 import hashlib
 from collections import defaultdict
 
-def Banner():
-    print "**************************************"
-    print "* runchecker 0.9 by Kevin Velickovic *"
-    print "**************************************\n"
-
-Banner()
-
-
 FileList_first = [[]]
 FileList_ALL = [[]]
 FileList_Validated = [[]]
