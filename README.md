@@ -12,13 +12,17 @@ Elphel camera array images post processing using GNU parallel.
 
 ### Workers
 
-To use remote machines for processing, the login must not require a password and the required directories must be accessible from every machine.
+To use remote machines for processing, the login must not require a password or you can add your SSH key to remote hosts, and the required directories must be accessible from every machine, you can use a network folder mounted at the same place.
 
 Our scripts try to read the remote host list from ~/.parallel/sshloginfile
 
         mkdir ~/.parallel
         echo "user@host1" >> ~/.parallel/sshloginfile
         echo "user@host2" >> ~/.parallel/sshloginfile
+        
+If you want to register your SSH key to the remote hosts, you can simply do it with the following command
+
+        tools/sshcopykeys
 
  But you can specify them with other GNU parallel options in the PARALLEL environment variable or with other GNU parallel options as arguments for the generated scripts:
 
