@@ -11,6 +11,7 @@
 # Author(s):
 #
 #      Luc Deschenaux <luc.deschenaux@foxel.ch>
+#      Kevin Velickovic <k.velickovic@foxel.ch>
 #
 #
 # This file is part of the FOXEL project <http://foxel.ch>.
@@ -87,7 +88,7 @@ fi
 export FILELIST
 
 
-echo "#!/usr/bin/parallelbang -I _XML_ --ungroup --sshloginfile .. --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
+echo "#!bin/parallelbang -I _XML_ --ungroup --sshloginfile .. --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
 chmod +x "$OUTPUT"
 
 doit() {
