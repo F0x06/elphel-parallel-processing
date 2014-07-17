@@ -53,7 +53,7 @@ See the GNU parallel manual page for -S option details and more.
 
 #### Node control
 
-      Usage: tools/nodecontrol -b <Command to broadcast>
+      Usage: tools/nodecontrol -b <Command to broadcast> [-p, Ping hosts]
 
 ### Copyright
 
