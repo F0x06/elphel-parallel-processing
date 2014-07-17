@@ -39,7 +39,7 @@
 
 [ -n "$DEBUG" ] && set -x
 
-if [ $# -lt 2 -o $# -gt 4 ] ; then
+if [ $# -lt 2 -o $# -gt 6 ] ; then
   echo "Usage: $(basename $0) <eyesis_correction_xml> <source_dir> [ <results_dir>  <output_file> <split_at> <truncate> ]"
   echo
   echo "- When no output file is specified, parallel is run immediately"
