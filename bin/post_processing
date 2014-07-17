@@ -94,7 +94,7 @@ chmod +x "$OUTPUT"
 doit() {
   getTimestamps | while read TIMESTAMP ; do
     OUTXML=$SRCDIR/post_processing/${NOW}-$TIMESTAMP.xml
-    corrxml.sh $XML $SRCDIR $DSTDIR $OUTXML $CHANNELS $TIMESTAMP
+    corrxml/corrxml.sh $XML $SRCDIR $DSTDIR $OUTXML $CHANNELS $TIMESTAMP
     echo $OUTXML
   done
 }
