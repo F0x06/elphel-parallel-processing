@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # elphel-parallel-processing - Elphel camera array images post processing using GNU parallel
 #

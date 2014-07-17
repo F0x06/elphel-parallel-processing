@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # elphel-parallel-processing - Elphel camera array images post processing using GNU parallel
 #
@@ -54,12 +54,17 @@ if [ "$1" == "-f" ] ; then
 fi
 
 (
-  tail -n +2 $FOLLOW "$INPUT" | while read $l && [ -z "$EOP" ] ; do
+  tail -n +2 $FOLLOW "$INPUT" | while true ; do
+   if [ -n "$EOP" ] ; then
+     break
+   fi
+   read l
    if [ "$l" == "EOP" ] ; then
      EOP=1
    else
     echo $l
    fi
   done
-) | parallel $@ $BANG_OPTIONS
+  
+) | parallel --no-notice $@ $BANG_OPTIONS
 
