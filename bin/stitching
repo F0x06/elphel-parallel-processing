@@ -1,6 +1,6 @@
 #!/bin/sh
-
-# e4p_pprocessor - Eyesis 4Pi GNU Parallel Processor
+#
+# stitching
 #
 # Copyright (c) 2013-2014 FOXEL SA - http://foxel.ch
 # Please read <http://foxel.ch/license> for more information.
@@ -8,8 +8,7 @@
 #
 # Author(s):
 #
-#      Luc Deschenaux <l.deschenaux@foxel.ch>
-#      Kevin Velickovic <k.velickovic@foxel.ch>
+#      Luc Deschenaux <luc.deschenaux@foxel.ch>
 #
 #
 # This file is part of the FOXEL project <http://foxel.ch>.
@@ -38,7 +37,7 @@
 #      Attribution" section of <http://foxel.ch/license>.
 
 if [ "$#" -ne 5 ] ; then
-     echo "Usage: $(basename $0) <Source directory> <Destination Directory> <Black point> <White point> <Quality>"
+     echo "Usage: $(basename $0) <Source directory> <Destination Directory> <Black point> <White point> <Quality> <Output_file>"
      exit 1
 fi
 
@@ -47,6 +46,12 @@ DSTDIR="$2"
 BLACKPOINT="$3"
 WHITEPOINT="$4"
 QUALITY="$5"
+OUTPUT="$6"
+
+[ -z "$QUALITY" ] && QUALITY=98
+[ -z "$BLACKPOINT" ] && BLACKPOINT=0
+[ -z "$WHITEPOINT" ] && WHITEPOINT=100
+
 
 getTimestamps() {
     find "$SRCDIR" -maxdepth 1 -name \*.tiff | while read TIFF ; do
@@ -56,14 +61,32 @@ getTimestamps() {
 
 NOW=$(date +%s) # _%N
 
-LOGDIR=logs/stitch/$NOW
-mkdir -p logs/stitch
-SCRIPT=scripts/stitch.sh
+if [ -z "$OUTPUT" ] ; then
+  OUTPUT="stitching-$NOW"
+  RUN=yes
+fi
 
-echo "--bf $SCRIPT --ungroup --sshloginfile .. --joblog logs/stitch/$NOW.log scripts/stitch.sh $LOGDIR $SRCDIR $DSTDIR {} $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1" > ~/.parallel/stitch-$NOW
+LOGDIR=log/stitching
+mkdir -p $LOGDIR
+[ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=scripts/stitch.sh
+[ -z "$REMOTELOGGER" ] && REMOTELOGGER=scripts/paralog.sh
 
-echo "#!/usr/bin/parallel --shebang -J stitch-$NOW"
-    getTimestamps | while read TIMESTAMP ; do
+echo "#!/usr/bin/parallelbang -I _TIMESTAMP_ --ungroup --sshloginfile .. --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
+
+chmod +x "$OUTPUT"
+
+doit() {
+  getTimestamps | while read TIMESTAMP ; do
     echo $TIMESTAMP
-done
+  done
+}
+
+if [ -n "$RUN" ] ; then
+  echo "#### running $OUTPUT" 1>&2
+  doit | tee -a "$OUTPUT" | parallel  -I _TIMESTAMP_ --ungroup --sshloginfile .. --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \| $REMOTELOGGER $(basename $OUTPUT)
+else
+  doit | tee -a "$OUTPUT"
+fi
+
+echo "#### saved as $OUTPUT" 1>&2
 
