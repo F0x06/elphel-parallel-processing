@@ -36,7 +36,7 @@
 #      You are required to attribute the work as explained in the "Usage and
 #      Attribution" section of <http://foxel.ch/license>.
 
-if [ "$#" -ne 5 ] ; then
+if [ "$#" -le 4 ] ; then
      echo "Usage: $(basename $0) <Source directory> <Destination Directory> <Black point> <White point> <Quality> <Output_file>"
      exit 1
 fi
