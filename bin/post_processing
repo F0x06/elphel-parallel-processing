@@ -49,6 +49,7 @@ if [ $# -lt 2 -o $# -gt 4 ] ; then
   echo "- IMAGEJMEM, REMOTELOGGER, FILELIST, LOGDIR, REMOTESCRIPT too"
   echo "- <split_at> defaults to 9. When you want only the 8 first channels"
   echo "  per timestamp then set <split_at> to 8 and <truncate> to true"
+  echo
   exit 1
 fi
 
