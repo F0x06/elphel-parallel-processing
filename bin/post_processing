@@ -1,7 +1,5 @@
 #!/bin/bash
 #
-# post_processing
-#
 # elphel-parallel-processing - Elphel camera array images post processing using GNU parallel
 #
 # Copyright (c) 2013-2014 FOXEL SA - http://foxel.ch
@@ -41,12 +39,15 @@
 
 [ -n "$DEBUG" ] && set -x
 
-if [ $# -lt 2 -o $# -gt 4 ] ; then
-  echo "Usage: $(basename $0) <eyesis_correction_xml> <source_dir> [ <results_dir>  <output_file> ]"
+if [ $# -lt 2 -o $# -gt 6 ] ; then
+  echo "Usage: $(basename $0) <eyesis_correction_xml> <source_dir> [ <results_dir>  <output_file> <split_at> <truncate> ]"
   echo
   echo "- When no output file is specified, parallel is run immediately"
   echo "- Paths for corrxml can be specified as environment variables"
-  echo "- CHANNELS, IMAGEJMEM, REMOTELOGGER, FILELIST, LOGDIR, REMOTESCRIPT too"
+  echo "- IMAGEJMEM, REMOTELOGGER, FILELIST, LOGDIR, REMOTESCRIPT too"
+  echo "- <split_at> defaults to 9. When you want only the 8 first channels"
+  echo "  per timestamp then set <split_at> to 8 and <truncate> to true"
+  echo
   exit 1
 fi
 
@@ -54,8 +55,10 @@ XML="$1"
 SRCDIR="$2"
 DSTDIR="$3"
 OUTPUT="$4"
+SPLITAT="$5"
+TRUNCATE="$6"
 
-[ -z "$CHANNELS" ] && CHANNELS=9  # channels per job (xml)
+[ -z "$SPLITAT" ] && SPLITAT=9  # channels per job (xml)
 [ -z "$IMAGEJMEM" ] && IMAGEJMEM=7150m
 [ -z "$REMOTELOGGER" ] && REMOTELOGGER=remote-scripts/paralog.sh
 
@@ -94,8 +97,8 @@ chmod +x "$OUTPUT"
 doit() {
   getTimestamps | while read TIMESTAMP ; do
     OUTXML=$SRCDIR/post_processing/${NOW}-$TIMESTAMP.xml
-    corrxml/corrxml.sh $XML $SRCDIR $DSTDIR $OUTXML $CHANNELS $TIMESTAMP
-    echo $OUTXML
+    corrxml.sh $XML $SRCDIR $DSTDIR $OUTXML $SPLITAT $TIMESTAMP $TRUNCATE
+    find $(dirname $OUTXML) -maxdepth 1 -type f -name $(basename $OUTXML .xml)\*
   done
 }
 
