@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """
   elphel-parallel-processing - Elphel camera array images post processing using GNU parallel

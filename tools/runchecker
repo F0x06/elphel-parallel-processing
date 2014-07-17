@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 """
   elphel-parallel-processing - Elphel camera array images post processing using GNU parallel
@@ -71,7 +72,6 @@ S_OPT = 0
 def main(argv):
     global JP4_FOLDER, TRASH_FOLDER, OUT_FILE, LOG_FILE, MISS_FILE, DUP_FILE, REF_INDEX
     global V_OPT, T_OPT, W_OPT, L_OPT, M_OPT, R_OPT, s_OPT, S_OPT
-
     if(len(sys.argv) <= 1):
         print '%s -i <jp4 folder> [-t <trash folder> -v <Validate all trashs> -w <Write file paths to file> -l <Write stdout to a log file>]' % sys.argv[0]
         sys.exit(2)

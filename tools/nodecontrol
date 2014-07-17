@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """
   elphel-parallel-processing - Elphel camera array images post processing using GNU parallel
@@ -53,12 +54,21 @@ else:
     sys.exit(0)
 
 def showHelp():
-  print 'Usage: %s -b <Command to broadcast>' % sys.argv[0]
+    print 'Usage: %s -b <Command to broadcast>' % sys.argv[0]
+
+def checkHost(IP):
+    Addr = IP.split('@')[1]
+    response = os.system("ping -c 1 -w 1 " + Addr + " > /dev/null")
+
+    if response == 0:
+        return 1
+    else:
+        return 0
 
 def broadcastCommand(Command):
     for Host in __SSH_HOSTS__:
-      print "Running on %s..." % Host
-      os.system("ssh %s '%s'" % (Host, Command )) 
+        print "Running on %s..." % Host
+        os.system("ssh %s '%s'" % (Host, Command )) 
 
 def main(argv):
 
@@ -67,13 +77,24 @@ def main(argv):
         sys.exit(0)
 
     try:
-        opts, args = getopt.getopt(argv,"b:")
+        opts, args = getopt.getopt(argv,"b:p")
     except getopt.GetoptError:
         showHelp()
         sys.exit(0)
     for opt, arg in opts:
         if opt in ("-b"):
             broadcastCommand(arg)
+        elif opt in ("-p"):
+            Label = ""
+            Index = 1
+            for Host in __SSH_HOSTS__:
+                if checkHost(Host):
+                    Label = "\033[32mOnline\033[39m"
+                else:
+                    Label = "\033[31mOffline\033[39m"
+
+                sys.stdout.write ("[%d] %s %s\n" % (Index, Host, Label))
+                Index += 1
         else:
             showHelp()
 
