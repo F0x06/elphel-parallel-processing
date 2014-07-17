@@ -3,7 +3,7 @@
 
 """
   nodecontrol
-  
+
   elphel-parallel-processing - Elphel camera array images post processing using GNU parallel
  
   Copyright (c) 2014 FOXEL SA - http://foxel.ch
@@ -56,7 +56,7 @@ else:
     sys.exit(0)
 
 def showHelp():
-    print 'Usage: %s -b <Command to broadcast>' % sys.argv[0]
+    print 'Usage: %s [-b <Command to broadcast> | -p, Ping SSH hosts]' % sys.argv[0]
 
 def checkHost(IP):
     Addr = IP.split('@')[1]
