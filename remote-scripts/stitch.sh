@@ -46,10 +46,6 @@ set -e
 QUALITY=98
 LEVELS="0%,100%,1"
 
-LOGDIR=$1
-[ -d "$LOGDIR" ] || mkdir -p $LOGDIR
-shift
-
 SRCDIR=$1
 DSTDIR=$2
 TIMESTAMP=$3
@@ -57,7 +53,6 @@ TIMESTAMP=$3
 [ -n "$5" ] && LEVELS=$5
 
 t=$TIMESTAMP
-LOGFILE=$LOGDIR/$t.log
 
 {
      enblend-mp -w -o $DSTDIR/result_${t}_top.tif  $SRCDIR/${t}-12-DECONV-RGB24_EQR-RIGHT.tiff $SRCDIR/${t}-13-DECONV-RGB24_EQR.tiff $SRCDIR/${t}-14-DECONV-RGB24_EQR.tiff $SRCDIR/${t}-15-DECONV-RGB24_EQR.tiff $SRCDIR/${t}-08-DECONV-RGB24_EQR.tiff $SRCDIR/${t}-09-DECONV-RGB24_EQR.tiff $SRCDIR/${t}-10-DECONV-RGB24_EQR.tiff $SRCDIR/${t}-11-DECONV-RGB24_EQR.tiff $SRCDIR/${t}-12-DECONV-RGB24_EQR-LEFT.tiff
@@ -74,6 +69,6 @@ LOGFILE=$LOGDIR/$t.log
      rm $DSTDIR/result_${t}_mid.tif
      rm $DSTDIR/result_${t}_bot.tif
 
-} 2>&1 | tee $LOGFILE
+} 2>&1
 
 
