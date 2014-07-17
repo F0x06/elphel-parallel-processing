@@ -11,6 +11,11 @@
 #      Luc Deschenaux <luc.deschenaux@foxel.ch>
 #
 #
+# Contributor(s):
+#
+#      Kevin Velickovic <k.velickovic@foxel.ch>
+#
+#
 # This file is part of the FOXEL project <http://foxel.ch>.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -71,7 +76,7 @@ mkdir -p $LOGDIR
 [ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=remote-scripts/stitch.sh
 [ -z "$REMOTELOGGER" ] && REMOTELOGGER=remote-scripts/paralog.sh
 
-echo "#!/usr/bin/parallelbang -I _TIMESTAMP_ --ungroup --sshloginfile .. --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
+echo "#!bin/parallelbang -I _TIMESTAMP_ --ungroup --sshloginfile .. --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
 
 chmod +x "$OUTPUT"
 
