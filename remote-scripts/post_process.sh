@@ -13,11 +13,6 @@
 #      Luc Deschenaux <l.deschenaux@foxel.ch>
 #
 #
-# Contributor(s):
-#
-#      Kevin Velickovic <k.velickovic@foxel.ch>
-#
-#
 # This file is part of the FOXEL project <http://foxel.ch>.
 #
 # This program is free software: you can redistribute it and/or modify
