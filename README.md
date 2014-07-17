@@ -51,6 +51,10 @@ See the GNU parallel manual page for -S option details and more.
 
       Usage: tools/runchecker -i <jp4 folder> [-t <trash folder> -v <Validate all trashs> -w <Write file paths to file> -l <Write stdout to a log file>]
 
+#### Node control
+
+      Usage: tools/nodecontrol -b <Command to broadcast>
+
 ### Copyright
 
 Copyright (c) 2014 FOXEL SA - [http://foxel.ch](http://foxel.ch)<br />
