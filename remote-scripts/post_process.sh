@@ -1,7 +1,5 @@
 #!/bin/bash
 #
-# post_process.sh
-#
 # elphel-parallel-processing - Elphel camera array images post processing using GNU parallel
 #
 # Copyright (c) 2014 FOXEL SA - http://foxel.ch
