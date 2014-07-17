@@ -1,5 +1,7 @@
 #!/bin/bash
 #
+# stitch.sh
+#
 # elphel-parallel-processing - Elphel camera array images post processing using GNU parallel
 #
 # Copyright (c) 2014 FOXEL SA - http://foxel.ch
@@ -9,10 +11,6 @@
 # Author(s):
 #
 #      Luc Deschenaux <l.deschenaux@foxel.ch>
-#
-#
-# Contributor(s):
-#
 #      Kevin Velickovic <k.velickovic@foxel.ch>
 #
 #
