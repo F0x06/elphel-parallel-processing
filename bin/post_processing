@@ -98,7 +98,7 @@ doit() {
 
 if [ -n "$RUN" ] ; then
   echo "#### running $OUTPUT" 1>&2
-  doit | tee -a "$OUTPUT" | parallel --no-notice -I _XML_ --ungroup --sshloginfile ..  --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \| $REMOTELOGGER $(basename $OUTPUT)
+  doit | tee -a "$OUTPUT" | parallel -I _XML_ --ungroup --sshloginfile ..  --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \| $REMOTELOGGER $(basename $OUTPUT)
 else
   doit | tee -a "$OUTPUT"
 fi
