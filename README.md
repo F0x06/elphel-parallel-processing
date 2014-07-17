@@ -20,10 +20,6 @@ Our scripts try to read the remote host list from ~/.parallel/sshloginfile
         echo "user@host1" >> ~/.parallel/sshloginfile
         echo "user@host2" >> ~/.parallel/sshloginfile
         
-If you want to register your SSH key to the remote hosts, you can simply do it with the following command
-
-        tools/sshcopykeys
-
  But you can specify them with other GNU parallel options in the PARALLEL environment variable or with other GNU parallel options as arguments for the generated scripts:
 
         PARALLEL="-S user@host,user@host2,..."
@@ -33,6 +29,10 @@ and/or
         generated_script -S user@host,user@host2,...
 
 See the GNU parallel manual page for -S option details and more.
+
+If you want to register your SSH key to the remote hosts, you can simply do it with the following command
+
+        tools/sshcopykeys
 
 ### Usage
 #### Post-processing
