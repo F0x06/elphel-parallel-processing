@@ -1,4 +1,4 @@
-## e4p_pprocessor<br />Eyesis 4Pi GNU Parallel Processor
+## elphel-parallel-processing<br />Elphel camera array images post processing using GNU parallel
 
 Elphel camera array images post processing using GNU parallel.
 
