@@ -12,40 +12,40 @@ Elphel camera array images post processing using GNU parallel.
 
 ### Workers
 
-    To use remote machines for processing, the login must not require a password and the required directories must be accessible from every machine.
+To use remote machines for processing, the login must not require a password and the required directories must be accessible from every machine.
 
-    Our scripts try to read the remote host list from ~/.parallel/sshloginfile
-    
+Our scripts try to read the remote host list from ~/.parallel/sshloginfile
+
         mkdir ~/.parallel
         echo "user@host1" >> ~/.parallel/sshloginfile
         echo "user@host2" >> ~/.parallel/sshloginfile
 
-    But you can specify them with other GNU parallel options in the PARALLEL environment variable or with other GNU parallel options as arguments for the generated scripts:
-        
+ But you can specify them with other GNU parallel options in the PARALLEL environment variable or with other GNU parallel options as arguments for the generated scripts:
+
         PARALLEL="-S user@host,user@host2,..."
-    
-    and/or
-    
+
+and/or
+
         generated_script -S user@host,user@host2,...
-    
-    See the GNU parallel manual page for -S option details and more.
+
+See the GNU parallel manual page for -S option details and more.
 
 ### Usage
 #### Post-processing
       
       Usage: bin/post_processing <eyesis_correction_xml> <source_dir> [ <results_dir>  <output_script> ]
-    
-    - When no output file is specified, parallel is run immediately.
-    - You can run the generated file (again), arguments are passed to GNU parallel (or you can use the PARALLEL environment variable). 
-    - Paths for corrxml can be specified as environment variables.
-    - By default it generate one xml (job) per panorama (because CHANNEL=9)
+
+- When no output file is specified, parallel is run immediately.
+- You can run the generated file (again), arguments are passed to GNU parallel (or you can use the PARALLEL environment variable). 
+- Paths for corrxml can be specified as environment variables.
+- By default it generate one xml (job) per panorama (because CHANNEL=9)
 
 #### Stitching
 
       Usage: bin/stitching <Source directory> <Destination Directory> [ <Black point> <White point> <Quality> <Output_script> ]
     
-    - When no output file is specified, parallel is run immediately
-    - You can run the generated file (again), arguments are passed to GNU parallel (or you can use the PARALLEL environment variable). 
+- When no output file is specified, parallel is run immediately
+- You can run the generated file (again), arguments are passed to GNU parallel (or you can use the PARALLEL environment variable). 
 
 #### Timestamps checker
 
