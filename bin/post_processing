@@ -71,7 +71,7 @@ fi
 
 [ -z "$LOGDIR" ] && LOGDIR=log/post_processing
 mkdir -p $LOGDIR
-[ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=remote-scripts/post_processing.sh
+[ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=remote-scripts/post_process.sh
 mkdir -p $SRCDIR/post_processing
 
 if [ -z "$FILELIST" ] ; then
