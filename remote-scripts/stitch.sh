@@ -61,7 +61,7 @@ t=$TIMESTAMP
 
      enblend-mp --wrap='vertical' -o $DSTDIR/result_${t}.tif $DSTDIR/result_${t}_top.tif $DSTDIR/result_${t}_mid.tif $DSTDIR/result_${t}_bot.tif
 
-     convert $DSTDIR/result_${t}.tif -level $LEVEL -quality $QUALITY $DSTDIR/result_${t}-0-25-1.jpeg
+     convert $DSTDIR/result_${t}.tif -level $LEVELS -quality $QUALITY $DSTDIR/result_${t}-0-25-1.jpeg
 
      rm $DSTDIR/result_${t}_top.tif
      rm $DSTDIR/result_${t}_mid.tif
