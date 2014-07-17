@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-  e4p_pprocessor - Eyesis 4Pi GNU Parallel Processor
+  elphel-parallel-processing - Elphel camera array images post processing using GNU parallel
  
   Copyright (c) 2014 FOXEL SA - http://foxel.ch
   Please read <http://foxel.ch/license> for more information.
