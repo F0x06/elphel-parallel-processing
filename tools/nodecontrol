@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+
+"""
+  elphel-parallel-processing - Elphel camera array images post processing using GNU parallel
+ 
+  Copyright (c) 2014 FOXEL SA - http://foxel.ch
+  Please read <http://foxel.ch/license> for more information.
+ 
+ 
+  Author(s):
+ 
+       Kevin Velickovic <k.velickovic@foxel.ch>
+ 
+ 
+  This file is part of the FOXEL project <http://foxel.ch>.
+ 
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+ 
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+ 
+  You should have received a copy of the GNU Affero General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ 
+ 
+  Additional Terms:
+ 
+       You are required to preserve legal notices and author attributions in
+       that material or in the Appropriate Legal Notices displayed by works
+       containing it.
+ 
+       You are required to attribute the work as explained in the "Usage and
+       Attribution" section of <http://foxel.ch/license>.
+"""
+
+import os, sys, getopt
+
+__HOME_FOLDER__ = os.path.expanduser("~")
+__SSH_HOSTS_FILE__ = "%s/.parallel/sshloginfile" % __HOME_FOLDER__
+__SSH_HOSTS__ = []
+
+if os.path.isfile(__SSH_HOSTS_FILE__):
+    SSH_FILE = open(__SSH_HOSTS_FILE__, 'r')
+    SSH_FILE_CONTENT = SSH_FILE.read().rstrip()
+    __SSH_HOSTS__ = SSH_FILE_CONTENT.split(',')
+else:
+    print "[ERROR] No sshloginfile configured."
+    sys.exit(0)
+
+def showHelp():
+  print 'Usage: %s -b <Command to broadcast>' % sys.argv[0]
+
+def broadcastCommand(Command):
+    for Host in __SSH_HOSTS__:
+      print "Running on %s..." % Host
+      os.system("ssh %s '%s'" % (Host, Command )) 
+
+def main(argv):
+
+    if(len(sys.argv) <= 1):
+        showHelp()
+        sys.exit(0)
+
+    try:
+        opts, args = getopt.getopt(argv,"b:")
+    except getopt.GetoptError:
+        showHelp()
+        sys.exit(0)
+    for opt, arg in opts:
+        if opt in ("-b"):
+            broadcastCommand(arg)
+        else:
+            showHelp()
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
