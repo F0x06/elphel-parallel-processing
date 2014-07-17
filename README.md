@@ -57,7 +57,7 @@ If you want to register your SSH key to the remote hosts, you can simply do it w
 
 #### Node control
 
-      Usage: tools/nodecontrol -b <Command to broadcast> [-p, Ping hosts]
+      Usage: tools/nodecontrol [-b <Command to broadcast> | -p, Ping SSH hosts]
 
 ### Copyright
 
