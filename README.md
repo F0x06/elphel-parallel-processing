@@ -64,6 +64,40 @@ If you want to register your SSH key to the remote hosts, you can simply do it w
 
 - When no arguments is specified, sshcopykeys reads SSH keys from ~/.parallel/sshloginfile file
 
+### Example usage scenario (post_processing)
+
+- Register nodes
+
+        echo "pr@192.168.1.151" >> ~/.parallel/sshloginfile
+        echo "pr@192.168.1.152" >> ~/.parallel/sshloginfile
+
+- Copy SSH keys
+
+        tools/sshcopykeys
+
+- Mount required folders
+
+        tools/nodecontrol -b "sudo mkdir -p /data/footage"
+        tools/nodecontrol -b "sudo mount -t nfs 192.168.1.161:/volume/footage /data/footage"
+        
+        tools/nodecontrol -b "sudo mkdir -p /data/calibration-files"
+        tools/nodecontrol -b "sudo mount -t nfs 192.168.1.161:/volume/calibration-files /data/calibration-files -o ro"
+
+- Configure ImageJ paths
+
+        export equirectangularDirectory="/data/calibration-files/Eyesis4pi-06d/calibration/maps"
+        export sensorDirectory="/data/calibration-files/Eyesis4pi-06d/calibration/sensors"
+        export sharpKernelDirectory="/data/calibration-files/Eyesis4pi-06d/calibration/kernels/sharp"
+        export smoothKernelDirectory="/data/calibration-files/Eyesis4pi-06d/calibration/kernels/smooth"
+      
+- Generate processig script
+
+        bin/post_processing /data/footage/data1/autoconfig_227537_946535.corr-xml /data/footage/data1/0 /data/footage/data1/imagej_processed post_process1.sh
+      
+- Start the processing
+
+        ./post_process1.sh
+      
 ### Copyright
 
 Copyright (c) 2014 FOXEL SA - [http://foxel.ch](http://foxel.ch)<br />
