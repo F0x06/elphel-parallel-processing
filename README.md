@@ -55,11 +55,11 @@ If you want to register your SSH key to the remote hosts, you can simply do it w
 
       Usage: tools/runchecker -i <jp4 folder> [-t <trash folder> -v <Validate all trashs> -w <Write file paths to file> -l <Write stdout to a log file>]
 
-#### Node control
+#### Node controller
 
       Usage: tools/nodecontrol [-b <Command to broadcast>, Broadcast command to all nodes | -p, Ping SSH hosts, -S <user@domain1,user@domain2>, SSH hosts list]
       
-#### SSH copy keys
+#### SSH keys copier
       Usage: tools/sshcopykeys [-S <user@domain1,user@domain2>, SSH hosts list]
 
 - When no arguments is specified, sshcopykeys reads SSH keys from ~/.parallel/sshloginfile file
