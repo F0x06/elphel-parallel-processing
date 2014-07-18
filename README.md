@@ -57,7 +57,12 @@ If you want to register your SSH key to the remote hosts, you can simply do it w
 
 #### Node control
 
-      Usage: tools/nodecontrol [-b <Command to broadcast> | -p, Ping SSH hosts]
+      Usage: tools/nodecontrol [-b <Command to broadcast>, Broadcast command to all nodes | -p, Ping SSH hosts, -S <user@domain1,user@domain2>, SSH hosts list]
+      
+#### SSH copy keys
+      Usage: tools/sshcopykeys [-S <user@domain1,user@domain2>, SSH hosts list]
+
+- When no arguments is specified, sshcopykeys reads SSH keys from ~/.parallel/sshloginfile file
 
 ### Copyright
 
