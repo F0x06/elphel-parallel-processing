@@ -90,7 +90,7 @@ If you want to register your SSH key to the remote hosts, you can simply do it w
         export sharpKernelDirectory="/data/calibration-files/Eyesis4pi-06d/calibration/kernels/sharp"
         export smoothKernelDirectory="/data/calibration-files/Eyesis4pi-06d/calibration/kernels/smooth"
       
-- Generate processig script
+- Generate post_processing script
 
         bin/post_processing /data/footage/data1/autoconfig_227537_946535.corr-xml /data/footage/data1/0 /data/footage/data1/imagej_processed post_process1.sh
       
