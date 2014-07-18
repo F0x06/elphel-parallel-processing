@@ -66,12 +66,12 @@ If you want to register your SSH key to the remote hosts, you can simply do it w
 
 ### Example usage scenario (post_processing)
 
-- Register nodes
+- Register nodes (Only once, until you add more nodes)
 
         echo "pr@192.168.1.151" >> ~/.parallel/sshloginfile
         echo "pr@192.168.1.152" >> ~/.parallel/sshloginfile
 
-- Copy SSH keys
+- Copy SSH keys (Only once, until you add more nodes)
 
         tools/sshcopykeys
 
@@ -97,6 +97,33 @@ If you want to register your SSH key to the remote hosts, you can simply do it w
 - Start the processing
 
         ./post_process1.sh
+        
+### Example usage scenario (stitching)
+
+- Register nodes (Only once, until you add more nodes)
+
+        echo "pr@192.168.1.151" >> ~/.parallel/sshloginfile
+        echo "pr@192.168.1.152" >> ~/.parallel/sshloginfile
+
+- Copy SSH keys (Only once, until you add more nodes)
+
+        tools/sshcopykeys
+
+- Mount required folders
+
+        tools/nodecontrol -b "sudo mkdir -p /data/footage"
+        tools/nodecontrol -b "sudo mount -t nfs 192.168.1.161:/volume/footage /data/footage"
+        
+        tools/nodecontrol -b "sudo mkdir -p /data/calibration-files"
+        tools/nodecontrol -b "sudo mount -t nfs 192.168.1.161:/volume/calibration-files /data/calibration-files -o ro"
+
+- Generate stitching script
+
+        bin/stitching /data/footage/data1/imagej_processed /data/footage/data1/results/ 0 100 98 stitch1.sh
+      
+- Start the stitching
+
+        ./stitch1.sh
       
 ### Copyright
 
