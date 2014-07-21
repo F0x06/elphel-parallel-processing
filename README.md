@@ -7,7 +7,7 @@ Elphel camera array images post processing using GNU parallel.
 **Table of Contents**  *generated with [DocToc](http://doctoc.herokuapp.com/)*
 
 - [Requirements](#requirements)
-- [Workers](#workers)
+- [Workers configuration](#workers-configuration)
 - [Usage](#usage)
   - [Post-processing](#post-processing)
   - [Stitching](#stitching)
@@ -29,7 +29,7 @@ Elphel camera array images post processing using GNU parallel.
     1. Fiji: http://fiji.sc/Fiji
     2. Elphel ImageJ plugins: https://github.com/FoxelSA/imagej-elphel
 
-### Workers
+### Workers configuration
 
 To use remote machines for processing, the login must not require a password or you can add your SSH key to remote hosts, and the required directories must be accessible from every machine, you can use a network folder mounted at the same place.
 
