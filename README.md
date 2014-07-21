@@ -114,12 +114,10 @@ If you want to register your SSH key to the remote hosts, you can simply do it w
         tools/nodecontrol -b "sudo mkdir -p /data/footage"
         tools/nodecontrol -b "sudo mount -t nfs 192.168.1.161:/volume/footage /data/footage"
         
-        tools/nodecontrol -b "sudo mkdir -p /data/calibration-files"
-        tools/nodecontrol -b "sudo mount -t nfs 192.168.1.161:/volume/calibration-files /data/calibration-files -o ro"
 
 - Generate stitching script
 
-        bin/stitching /data/footage/data1/imagej_processed /data/footage/data1/results/ 0 100 98 stitch1.sh
+        bin/stitching /data/footage/data1/imagej_processed /data/footage/data1/results 0 100 98 stitch1.sh
       
 - Start the stitching
 
