@@ -2,6 +2,25 @@
 
 Elphel camera array images post processing using GNU parallel.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](http://doctoc.herokuapp.com/)*
+
+- [Requirements](#requirements)
+- [Workers configuration](#workers-configuration)
+- [Usage](#usage)
+  - [Post-processing](#post-processing)
+  - [Stitching](#stitching)
+  - [Timestamps checker](#timestamps-checker)
+  - [Node controller](#node-controller)
+  - [SSH keys copier](#ssh-keys-copier)
+- [Example usage scenario (post_processing)](#example-usage-scenario-post_processing)
+- [Example usage scenario (stitching)](#example-usage-scenario-stitching)
+- [Copyright](#copyright)
+- [License](#license)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 ### Requirements
 
 1. GNU parallel must be installed on all Workers (nodes) including the host machine that runs processing scripts, Install it with **sudo apt-get install parallel**
@@ -10,7 +29,7 @@ Elphel camera array images post processing using GNU parallel.
     1. Fiji: http://fiji.sc/Fiji
     2. Elphel ImageJ plugins: https://github.com/FoxelSA/imagej-elphel
 
-### Workers
+### Workers configuration
 
 To use remote machines for processing, the login must not require a password or you can add your SSH key to remote hosts, and the required directories must be accessible from every machine, you can use a network folder mounted at the same place.
 
@@ -55,10 +74,74 @@ If you want to register your SSH key to the remote hosts, you can simply do it w
 
       Usage: tools/runchecker -i <jp4 folder> [-t <trash folder> -v <Validate all trashs> -w <Write file paths to file> -l <Write stdout to a log file>]
 
-#### Node control
+#### Node controller
 
-      Usage: tools/nodecontrol -b <Command to broadcast> [-p, Ping hosts]
+      Usage: tools/nodecontrol [-b <Command to broadcast>, Broadcast command to all nodes | -p, Ping SSH hosts, -S <user@domain1,user@domain2>, SSH hosts list]
+      
+#### SSH keys copier
+      Usage: tools/sshcopykeys [-S <user@domain1,user@domain2>, SSH hosts list]
 
+- When no arguments is specified, sshcopykeys reads SSH keys from ~/.parallel/sshloginfile file
+
+### Example usage scenario (post_processing)
+
+- Register nodes (Only once, until you add more nodes)
+
+        echo "pr@192.168.1.151" >> ~/.parallel/sshloginfile
+        echo "pr@192.168.1.152" >> ~/.parallel/sshloginfile
+
+- Copy SSH keys (Only once, until you add more nodes)
+
+        tools/sshcopykeys
+
+- Mount required folders
+
+        tools/nodecontrol -b "sudo mkdir -p /data/footage"
+        tools/nodecontrol -b "sudo mount -t nfs 192.168.1.161:/volume/footage /data/footage"
+        
+        tools/nodecontrol -b "sudo mkdir -p /data/calibration-files"
+        tools/nodecontrol -b "sudo mount -t nfs 192.168.1.161:/volume/calibration-files /data/calibration-files -o ro"
+
+- Configure ImageJ paths
+
+        export equirectangularDirectory="/data/calibration-files/Eyesis4pi-06d/calibration/maps"
+        export sensorDirectory="/data/calibration-files/Eyesis4pi-06d/calibration/sensors"
+        export sharpKernelDirectory="/data/calibration-files/Eyesis4pi-06d/calibration/kernels/sharp"
+        export smoothKernelDirectory="/data/calibration-files/Eyesis4pi-06d/calibration/kernels/smooth"
+      
+- Generate post_processing script
+
+        bin/post_processing /data/footage/data1/autoconfig_227537_946535.corr-xml /data/footage/data1/0 /data/footage/data1/imagej_processed post_process1.sh
+      
+- Start the processing
+
+        ./post_process1.sh
+        
+### Example usage scenario (stitching)
+
+- Register nodes (Only once, until you add more nodes)
+
+        echo "pr@192.168.1.151" >> ~/.parallel/sshloginfile
+        echo "pr@192.168.1.152" >> ~/.parallel/sshloginfile
+
+- Copy SSH keys (Only once, until you add more nodes)
+
+        tools/sshcopykeys
+
+- Mount required folders
+
+        tools/nodecontrol -b "sudo mkdir -p /data/footage"
+        tools/nodecontrol -b "sudo mount -t nfs 192.168.1.161:/volume/footage /data/footage"
+        
+
+- Generate stitching script
+
+        bin/stitching /data/footage/data1/imagej_processed /data/footage/data1/results 0 100 98 stitch1.sh
+      
+- Start the stitching
+
+        ./stitch1.sh
+      
 ### Copyright
 
 Copyright (c) 2014 FOXEL SA - [http://foxel.ch](http://foxel.ch)<br />

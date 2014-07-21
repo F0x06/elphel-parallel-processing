@@ -97,7 +97,7 @@ chmod +x "$OUTPUT"
 doit() {
   getTimestamps | while read TIMESTAMP ; do
     OUTXML=$SRCDIR/post_processing/${NOW}-$TIMESTAMP.xml
-    corrxml.sh $XML $SRCDIR $DSTDIR $OUTXML $SPLITAT $TIMESTAMP $TRUNCATE
+    corrxml/corrxml.sh $XML $SRCDIR $DSTDIR $OUTXML $SPLITAT $TIMESTAMP $TRUNCATE
     find $(dirname $OUTXML) -maxdepth 1 -type f -name $(basename $OUTXML .xml)\*
   done
 }
