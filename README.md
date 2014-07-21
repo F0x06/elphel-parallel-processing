@@ -2,6 +2,25 @@
 
 Elphel camera array images post processing using GNU parallel.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](http://doctoc.herokuapp.com/)*
+
+- [Requirements](#requirements)
+- [Workers](#workers)
+- [Usage](#usage)
+  - [Post-processing](#post-processing)
+  - [Stitching](#stitching)
+  - [Timestamps checker](#timestamps-checker)
+  - [Node controller](#node-controller)
+  - [SSH keys copier](#ssh-keys-copier)
+- [Example usage scenario (post_processing)](#example-usage-scenario-post_processing)
+- [Example usage scenario (stitching)](#example-usage-scenario-stitching)
+- [Copyright](#copyright)
+- [License](#license)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 ### Requirements
 
 1. GNU parallel must be installed on all Workers (nodes) including the host machine that runs processing scripts, Install it with **sudo apt-get install parallel**
