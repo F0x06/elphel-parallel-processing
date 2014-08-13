@@ -73,12 +73,20 @@ fi
 [ -z "$LOGDIR" ] && LOGDIR=log/stitching
 mkdir -p $LOGDIR
 
-[ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=$(which stitch.sh)
+if [ -z "$REMOTESCRIPT" ] ; then
+  REMOTESCRIPT=$(which stitch.sh)
+  REMOTESCRIPT=${REMOTESCRIPT#$HOME/}
+fi
+
 [ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=remote-scripts/stitch.sh
 [ -z "$REMOTELOGGER" ] && REMOTELOGGER=$(which paralog.sh)
 [ -z "$REMOTELOGGER" ] && REMOTELOGGER=remote-scripts/paralog.sh
 
-[ -z "$PBANG" ] && PBANG=$(which parallelbang)
+if [ -z "$PBANG" ] ; then
+  PBANG=$(which parallelbang)
+  PBANG=${PBANG#$HOME/}
+fi
+
 [ -z "$PBANG" ] && PBANG=bin/parallelbang
 
 echo "#!$PBANG --gnu -I _TIMESTAMP_ --ungroup --sshloginfile .. --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
