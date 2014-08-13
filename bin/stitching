@@ -67,12 +67,18 @@ if [ -z "$OUTPUT" ] ; then
   RUN=yes
 fi
 
-LOGDIR=log/stitching
+[ -z "$LOGDIR" ] && LOGDIR=log/stitching
 mkdir -p $LOGDIR
+
+[ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=$(which stitch.sh)
 [ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=remote-scripts/stitch.sh
+[ -z "$REMOTELOGGER" ] && REMOTELOGGER=$(which paralog.sh)
 [ -z "$REMOTELOGGER" ] && REMOTELOGGER=remote-scripts/paralog.sh
 
-echo "#!bin/parallelbang --gnu -I _TIMESTAMP_ --ungroup --sshloginfile .. --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
+[ -z "$PBANG" ] && PBANG=$(which parallelbang)
+[ -z "$PBANG" ] && PBANG=bin/parallelbang
+
+echo "#!$PBANG --gnu -I _TIMESTAMP_ --ungroup --sshloginfile .. --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
 
 chmod +x "$OUTPUT"
 
