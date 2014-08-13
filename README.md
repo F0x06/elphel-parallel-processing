@@ -65,7 +65,9 @@ If you want to register your SSH key to the remote hosts, you can simply do it w
 - When you want limit to n jp4 per xml then set <split_at> to n
 - When you want only the 8 first channels per timestamp then set <split_at> to 8 and <truncate> to true
 
- (TODO: if <split_at> is greater than 9 we should not have to run corrxml.sh instead and feed parallel with the xml files manually)
+ TODO: if <split_at> is greater than 9, we should not have to run corrxml.sh instead with the same arguments and feed parallel with the xml files manually as workaround:
+      corrxml.sh <base_config> <path_to_jp4_files> <results_directory> myjob.xml <split_at>
+      ls myjob*.xml | time parallel --gnu -j2 --ungroup --joblog myjob.log remote-scripts/post_process.sh | remote-scripts/paralog.sh myjob | tee myjob.out
 
 #### Stitching
 
