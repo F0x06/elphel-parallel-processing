@@ -64,5 +64,5 @@ fi
     echo $l
   done
   
-) | parallel $@ $BANG_OPTIONS
+) | parallel --gnu $@ $BANG_OPTIONS
 

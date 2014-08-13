@@ -31,7 +31,7 @@ Elphel camera array images post processing using GNU parallel.
 
 ### Workers configuration
 
-To use remote machines for processing, the login must not require a password or you can add your SSH key to remote hosts, and the required directories must be accessible from every machine, you can use a network folder mounted at the same place.
+To use remote machines for processing, the login must not require a password or you can add your SSH key to remote hosts, and the required directories must be accessible from every machine.
 
 Our scripts try to read the remote host list from ~/.parallel/sshloginfile
 
@@ -56,12 +56,16 @@ If you want to register your SSH key to the remote hosts, you can simply do it w
 ### Usage
 #### Post-processing
       
-      Usage: bin/post_processing <eyesis_correction_xml> <source_dir> [ <results_dir>  <output_script> ]
+      Usage: post_processing <eyesis_correction_xml> <source_dir> [ <results_dir>  <output_file> <split_at> <truncate> ]
 
 - When no output file is specified, parallel is run immediately.
 - You can run the generated file (again), arguments are passed to GNU parallel (or you can use the PARALLEL environment variable). 
-- Paths for corrxml can be specified as environment variables.
+- ImageJ-Elphel CORRECTION_PARAMETERS preferences for corrxml can be specified as environment variables.
 - By default it generate one xml (job) per panorama (because CHANNEL=9)
+- When you want limit to n jp4 per xml then set <split_at> to n
+- When you want only the 8 first channels per timestamp then set <split_at> to 8 and <truncate> to true
+
+ (TODO: if <split_at> is greater than 9 we should not have to run corrxml.sh instead and feed parallel with the xml files manually)
 
 #### Stitching
 
@@ -133,7 +137,6 @@ If you want to register your SSH key to the remote hosts, you can simply do it w
         tools/nodecontrol -b "sudo mkdir -p /data/footage"
         tools/nodecontrol -b "sudo mount -t nfs 192.168.1.161:/volume/footage /data/footage"
         
-
 - Generate stitching script
 
         bin/stitching /data/footage/data1/imagej_processed /data/footage/data1/results 0 100 98 stitch1.sh
