@@ -60,7 +60,12 @@ TRUNCATE="$6"
 
 [ -z "$SPLITAT" ] && SPLITAT=9  # channels per job (xml)
 [ -z "$IMAGEJMEM" ] && IMAGEJMEM=7150m
-[ -z "$REMOTELOGGER" ] && REMOTELOGGER=$(which paralog.sh)
+
+if [ -z "$REMOTELOGGER" ] ; then
+  REMOTELOGGER=$(which paralog.sh)
+  REMOTELOGGER=${REMOTELOGGER#$HOME/}
+fi
+
 [ -z "$REMOTELOGGER" ] && REMOTELOGGER=remote-scripts/paralog.sh
 
 getTimestamps() {
@@ -79,7 +84,11 @@ fi
 [ -z "$LOGDIR" ] && LOGDIR=log/post_processing
 mkdir -p $LOGDIR
 
-[ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=$(which post_process.sh)
+if [ -z "$REMOTESCRIPT" ] ; then
+  REMOTESCRIPT=$(which post_process.sh)
+  REMOTESCRIPT=${REMOTESCRIPT#$HOME/}
+fi
+
 [ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=remote-scripts/post_process.sh
 mkdir -p $SRCDIR/post_processing
 
@@ -93,7 +102,11 @@ fi
 # FILELIST is also used in corrxml.sh
 export FILELIST
 
-PBANG=$(which parallelbang)
+if [ -z "$PBANG" ] ; then
+  PBANG=$(which parallelbang)
+  PBANG=${PBANG#$HOME/}
+fi
+
 [ -z "$PBANG" ] && PBANG=bin/parallelbang
 
 echo "#!$PBANG --gnu -I _XML_ --ungroup --sshloginfile .. --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
