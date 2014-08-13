@@ -44,7 +44,7 @@ if [ $# -lt 1 ] ; then
 fi
 
 XML="$1"
-[ -n "$2" ] && MEM="$2"
+MEM="$2"
 [ -z "$MEM" ] && MEM="7150m"
 
 exec $FIJI --headless --allow-multiple --mem $MEM --run Eyesis_Correction prefs=$XML 2>&1
