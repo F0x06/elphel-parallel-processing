@@ -37,6 +37,8 @@
 #      You are required to attribute the work as explained in the "Usage and
 #      Attribution" section of <http://foxel.ch/license>.
 
+set -e
+
 [ -n "$DEBUG" ] && set -x
 
 if [ $# -lt 2 -o $# -gt 6 ] ; then
@@ -90,7 +92,7 @@ if [ -z "$REMOTESCRIPT" ] ; then
 fi
 
 [ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=remote-scripts/post_process.sh
-mkdir -p $SRCDIR/post_processing
+mkdir -p $SRCDIR/../post_processing
 
 if [ -z "$FILELIST" ] ; then
   FILELIST="/tmp/filelist_$NOW.tmp"
@@ -109,17 +111,20 @@ fi
 
 [ -z "$PBANG" ] && PBANG=bin/parallelbang
 
+mkdir -p ~/.parallel
+[ -f ~/.parallel/sshloginfile ] || touch ~/.parallel/sshloginfile  
+
 echo "#!$PBANG --gnu -I _XML_ --ungroup --sshloginfile .. --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
 chmod +x "$OUTPUT"
 
 doit() {
   if (( $SPLITAT > 9 )) ; then
-    OUTXML=$SRCDIR/post_processing/${NOW}.xml
+    OUTXML=$SRCDIR/../post_processing/${NOW}.xml
     corrxml.sh $XML $SRCDIR $DSTDIR $OUTXML $SPLITAT
     find $(dirname $OUTXML) -maxdepth 1 -type f -name $(basename $OUTXML .xml)\*
   else
     getTimestamps | while read TIMESTAMP ; do
-      OUTXML=$SRCDIR/post_processing/${NOW}-$TIMESTAMP.xml
+      OUTXML=$SRCDIR/../post_processing/${NOW}-$TIMESTAMP.xml
       corrxml.sh $XML $SRCDIR $DSTDIR $OUTXML $SPLITAT $TIMESTAMP $TRUNCATE
       find $(dirname $OUTXML) -maxdepth 1 -type f -name $(basename $OUTXML .xml)\*
     done

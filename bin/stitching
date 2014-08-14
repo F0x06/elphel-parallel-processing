@@ -37,6 +37,8 @@
 #      You are required to attribute the work as explained in the "Usage and
 #      Attribution" section of <http://foxel.ch/license>.
 
+set -e
+
 usage() {
      echo "Usage: $(basename $0) <Source directory> <Destination Directory> [ <Black point> <White point> <Quality> <Output_file> ]"
      exit $1
@@ -79,7 +81,12 @@ if [ -z "$REMOTESCRIPT" ] ; then
 fi
 
 [ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=remote-scripts/stitch.sh
-[ -z "$REMOTELOGGER" ] && REMOTELOGGER=$(which paralog.sh)
+
+if [ -z "$REMOTELOGGER" ] ; then
+  REMOTELOGGER=$(which paralog.sh)
+  REMOTELOGGER=${REMOTELOGGER#$HOME/}
+fi
+
 [ -z "$REMOTELOGGER" ] && REMOTELOGGER=remote-scripts/paralog.sh
 
 if [ -z "$PBANG" ] ; then
@@ -88,6 +95,9 @@ if [ -z "$PBANG" ] ; then
 fi
 
 [ -z "$PBANG" ] && PBANG=bin/parallelbang
+
+mkdir -p ~/.parallel
+[ -f ~/.parallel/sshloginfile ] || touch ~/.parallel/sshloginfile
 
 echo "#!$PBANG --gnu -I _TIMESTAMP_ --ungroup --sshloginfile .. --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
 
