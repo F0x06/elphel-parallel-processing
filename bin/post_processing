@@ -96,7 +96,7 @@ mkdir -p $SRCDIR/../post_processing
 
 if [ -z "$FILELIST" ] ; then
   FILELIST="/tmp/filelist_$NOW.tmp"
-  find "$SRCDIR" -maxdepth 1 -name \*.jp4 > $FILELIST
+  find "$SRCDIR" -maxdepth 1 -name \*.jp4 | sort > $FILELIST
 else
   echo "Using files listed in $FILELIST" 1>&2
 fi
