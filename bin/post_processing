@@ -41,6 +41,11 @@ set -e
 
 [ -n "$DEBUG" ] && set -x
 
+if [ "$1" = "-s" -o "$1" = "--shuffle" ] ; then
+  SHUFFLE=-s
+  shift
+fi
+
 if [ $# -lt 2 -o $# -gt 6 ] ; then
   echo "Usage: $(basename $0) <eyesis_correction_xml> <source_dir> [ <results_dir>  <output_file> <split_at> <truncate> ]"
   echo
@@ -71,11 +76,38 @@ fi
 [ -z "$REMOTELOGGER" ] && REMOTELOGGER=remote-scripts/paralog.sh
 
 getTimestamps() {
-    cat "$FILELIST" | while read JP4 ; do
+    while read JP4 ; do
         echo $(basename $JP4) | sed -r -n -e 's/^([0-9]{10}_[0-9]{6})_.*/\1/p'
     done | sort -u
 }
 
+shuffile() {                                                                                                                                          
+  argv=($(cat "$FILELIST" | getTimestamps))
+  argc=${#argv[*]}
+  last=$(expr $argc - 1)
+  [ $last -eq 0 ] && last=1
+  step=$(expr $argc / 2)
+  [ $step -eq 0 ] && step=1
+  while true ; do
+    for (( i=0; i<$argc ; i+=step )) ; do
+      stamp="${argv[$i]}"
+      if [ -n "$stamp" ] ; then
+       grep -e $stamp "$FILELIST"
+       argv[$i]=
+      fi
+    done
+    if [ -n "${argv[$last]}" ] ; then
+      grep -e ${argv[$last]} "$FILELIST" > /tmp/last.$$.tmp
+      argv[argc-1]=0
+      last_count=($(wc -l /tmp/last.$$.tmp))
+      [ ${last_count[0]} -eq 9 ] && cat /tmp/last.$$.tmp
+      rm /tmp/last.$$.tmp
+    fi
+    [ $step -eq 1 ] && break
+    ((step/=2))
+  done
+}
+  
 NOW=$(date +%s) # _%N
 
 if [ -z "$OUTPUT" ] ; then
@@ -94,15 +126,19 @@ fi
 [ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=remote-scripts/post_process.sh
 mkdir -p $SRCDIR/../post_processing
 
-if [ -z "$FILELIST" ] ; then
-  FILELIST="/tmp/filelist_$NOW.tmp"
-  find "$SRCDIR" -maxdepth 1 -name \*.jp4 | sort > $FILELIST
-else
-  echo "Using files listed in $FILELIST" 1>&2
-fi
-
-# FILELIST is also used in corrxml.sh
-export FILELIST
+getfilelist() {
+  if [ -z "$FILELIST" ] ; then
+    FILELIST="/tmp/filelist_$NOW.tmp"
+    find "$SRCDIR" -maxdepth 1 -name \*.jp4 | sort > $FILELIST
+  else
+    echo "Using files listed in $FILELIST" 1>&2
+  fi
+  if [ -n "$SHUFFLE" ] ; then
+    shuffile
+  else
+    cat "$FILELIST"
+  fi
+}
 
 if [ -z "$PBANG" ] ; then
   PBANG=$(which parallelbang)
@@ -120,13 +156,15 @@ chmod +x "$OUTPUT"
 doit() {
   if (( $SPLITAT > 9 )) ; then
     OUTXML=$SRCDIR/../post_processing/${NOW}.xml
-    corrxml.sh $XML $SRCDIR $DSTDIR $OUTXML $SPLITAT
-    find $(dirname $OUTXML) -maxdepth 1 -type f -name $(basename $OUTXML .xml)\*
+    corrxml.sh $SHUFFLE $XML $SRCDIR $DSTDIR $OUTXML $SPLITAT
+    find $(dirname $OUTXML) -maxdepth 1 -type f -name $(basename $OUTXML .xml)\* | sort
   else
-    getTimestamps | while read TIMESTAMP ; do
+    # FILELIST is also used in corrxml.sh
+    export FILELIST
+    getfilelist | getTimestamps | while read TIMESTAMP ; do
       OUTXML=$SRCDIR/../post_processing/${NOW}-$TIMESTAMP.xml
       corrxml.sh $XML $SRCDIR $DSTDIR $OUTXML $SPLITAT $TIMESTAMP $TRUNCATE
-      find $(dirname $OUTXML) -maxdepth 1 -type f -name $(basename $OUTXML .xml)\*
+      find $(dirname $OUTXML) -maxdepth 1 -type f -name $(basename $OUTXML .xml)\* | sort
     done
   fi
 }
