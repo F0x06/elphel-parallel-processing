@@ -37,31 +37,60 @@
 
 [ -n "$DEBUG" ] && set -x
 
-# ignore shebang options since limited to 128 characters
-BANG_OPTIONS="$1"
-shift
+usage() {
+  echo "usage: $(basename $0) <source_dir> <image_from> <image_to>"
+  echo
+  exit $1
+}
 
-INPUT="$1"
-shift
+FROMDIGIT=
+TODIGIT=
 
-# grab hashbang options with sed instead
-BANG_OPTIONS=$(head -n 1 "$INPUT" | sed -r -e 's/.*'$(basename "$0")'(.*)/\1/')
+timestampPrefix() {
 
-if [ "$1" == "-f" ] ; then
-  FOLLOW=-f
-  shift
-fi
+  TSA="$1"
+  TSB="$2"
 
-(
-  SUBASH_PID=$BASHPID
-  tail -n +2 $FOLLOW "$INPUT" | while read l ; do
-    if [ "$l" == "EOP" ] ; then
-      EOP=1
-      kill $SUBASH_PID
+  LEN=${#TSA}
+
+  for (( i=1; $i<=$LEN; ++i )) do
+    if [ ${TSA:0:$i} != ${TSB:0:$i} ] ; then
+      ((--i))
+      FROMDIGIT=${TSA:$i:1}
+      TODIGIT=${TSB:$i:1}
       break
     fi
-    echo $l
   done
-  
-) | parallel --gnu $@ $BANG_OPTIONS
+
+  echo ${TSA:0:$i} "$FROMDIGIT" "$TODIGIT"
+}
+
+[ $# -eq 0 ] && usage 1
+[ $# -lt 2 ] && usage 1
+
+SOURCE_DIR=$1
+FILE_FROM=$2
+FILE_TO=$3
+
+START=$(basename $FILE_FROM)
+END=$(basename $FILE_TO)
+
+if [ -n "$END" ] ; then
+  REPLY=($(timestampPrefix $FILE_FROM $FILE_TO))
+  PREFIX=${REPLY[0]}
+  FROMDIGIT=${REPLY[1]}
+  TODIGIT=${REPLY[2]}
+  ls -1 $SOURCE_DIR/${PREFIX}[$FROMDIGIT-$TODIGIT]* | while read f ; do
+    BASE=$(basename "$f")
+    [[ "$BASE" < "$START" || "$BASE" > "$END" ]] && continue
+    echo "$f"
+  done
+else
+  ls -1 $SOURCE_DIR | while read f ; do
+    BASE=$(basename "$f")
+    [[ "$BASE" < "$START" ]] && continue
+    echo "$f"
+  done
+fi
+
 
