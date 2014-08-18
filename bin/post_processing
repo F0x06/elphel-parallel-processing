@@ -92,16 +92,27 @@ shuffile() {
     for (( i=0; i<$argc ; i+=step )) ; do
       stamp="${argv[$i]}"
       if [ -n "$stamp" ] ; then
-       grep -e $stamp "$FILELIST"
-       argv[$i]=
+        grep -e $stamp "$FILELIST" > /tmp/jp4.$$.tmp
+        argv[$i]=
+        jp4_count=($(wc -l /tmp/jp4..$$.tmp))
+        if [ ${jp4_count[0]} -eq 9 ] ; then
+          cat /tmp/jp4.$$.tmp
+        else
+          echo "Warning: $t discarded (jp4 count is ${jp4_count[0]})"
+        fi
+        rm /tmp/jp4.$$.tmp
       fi
     done
     if [ -n "${argv[$last]}" ] ; then
-      grep -e ${argv[$last]} "$FILELIST" > /tmp/last.$$.tmp
+      grep -e ${argv[$last]} "$FILELIST" > /tmp/jp4.$$.tmp
       argv[argc-1]=0
-      last_count=($(wc -l /tmp/last.$$.tmp))
-      [ ${last_count[0]} -eq 9 ] && cat /tmp/last.$$.tmp
-      rm /tmp/last.$$.tmp
+      jp4_count=($(wc -l /tmp/jp4.$$.tmp))
+      if [ ${jp4_count[0]} -eq 9 ] ; then
+        cat /tmp/jp4.$$.tmp
+      else
+        echo "Warning: $t discarded (jp4 count is ${jp4_count[0]})"
+      fi
+      rm /tmp/jp4.$$.tmp
     fi
     [ $step -eq 1 ] && break
     ((step/=2))
