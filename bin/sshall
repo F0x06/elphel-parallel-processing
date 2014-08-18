@@ -91,9 +91,12 @@ userathost=($HOSTS)
 [ ${#HOSTS[@]} -eq 0 ] && usage 1
 
 sshlog() {
-  HOST=$1
+  ARG=(${1/:/ })
+  HOST=${ARG[0]}
+  PORT=${ARG[1]}
+  [ -z "$PORT" ] && PORT=22
   shift
-  { ssh $SSHOPTIONS $HOST $@ 2>&3 | while read stdout ; do
+  { ssh -p $PORT $SSHOPTIONS $HOST $@ 2>&3 | while read stdout ; do
        echo "$THIS: ${HOST} stdout $stdout"
     done
     echo ${PIPESTATUS[0]} > /tmp/$$
