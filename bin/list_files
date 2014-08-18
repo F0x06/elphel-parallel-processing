@@ -1,0 +1,96 @@
+#!/bin/bash
+#
+# elphel-parallel-processing - Elphel camera array images post processing using GNU parallel
+#
+# Copyright (c) 2013-2014 FOXEL SA - http://foxel.ch
+# Please read <http://foxel.ch/license> for more information.
+#
+# Author(s):
+#
+#      Luc Deschenaux <l.deschenaux@foxel.ch>
+#      Kevin Velickovic <k.velickovic@foxel.ch>
+#
+# This file is part of the FOXEL project <http://foxel.ch>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#
+# Additional Terms:
+#
+#      You are required to preserve legal notices and author attributions in
+#      that material or in the Appropriate Legal Notices displayed by works
+#      containing it.
+#
+#      You are required to attribute the work as explained in the "Usage and
+#      Attribution" section of <http://foxel.ch/license>.
+
+[ -n "$DEBUG" ] && set -x
+
+usage() {
+  echo "usage: $(basename $0) <source_dir> <image_from> <image_to>"
+  echo
+  exit $1
+}
+
+FROMDIGIT=
+TODIGIT=
+
+timestampPrefix() {
+
+  TSA="$1"
+  TSB="$2"
+
+  LEN=${#TSA}
+
+  for (( i=1; $i<=$LEN; ++i )) do
+    if [ ${TSA:0:$i} != ${TSB:0:$i} ] ; then
+      ((--i))
+      FROMDIGIT=${TSA:$i:1}
+      TODIGIT=${TSB:$i:1}
+      break
+    fi
+  done
+
+  echo ${TSA:0:$i} "$FROMDIGIT" "$TODIGIT"
+}
+
+[ $# -eq 0 ] && usage 1
+[ $# -lt 2 ] && usage 1
+
+SOURCE_DIR=$1
+FILE_FROM=$2
+FILE_TO=$3
+
+START=$(basename $FILE_FROM)
+END=$(basename $FILE_TO)
+
+if [ -n "$END" ] ; then
+  REPLY=($(timestampPrefix $FILE_FROM $FILE_TO))
+  PREFIX=${REPLY[0]}
+  FROMDIGIT=${REPLY[1]}
+  TODIGIT=${REPLY[2]}
+  ls -1 $SOURCE_DIR/${PREFIX}[$FROMDIGIT-$TODIGIT]* | while read f ; do
+    BASE=$(basename "$f")
+    [[ "$BASE" < "$START" || "$BASE" > "$END" ]] && continue
+    echo "$f"
+  done
+else
+  ls -1 $SOURCE_DIR | while read f ; do
+    BASE=$(basename "$f")
+    [[ "$BASE" < "$START" ]] && continue
+    echo "$f"
+  done
+fi
+
+
