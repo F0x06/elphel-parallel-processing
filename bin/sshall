@@ -107,9 +107,10 @@ sshlog() {
 
 for (( i=0; $i<${#userathost[@]} ; ++i )) do
   if [ -n "$SCRIPT" ] ; then
-  	sshlog ${userathost[$i]} $@ < $SCRIPT
+    ( sshlog ${userathost[$i]} $@ ; echo $THIS: ${userathost[$i]} status $? ) &
   else
-  	sshlog ${userathost[$i]} $@
+    ( sshlog ${userathost[$i]} $@ ; echo $THIS: ${userathost[$i]} status $? ) &
   fi
-  echo $THIS: ${userathost[$i]} status $?
 done
+
+wait
