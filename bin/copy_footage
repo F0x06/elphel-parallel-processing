@@ -1,0 +1,90 @@
+#!/bin/bash
+#
+# elphel-parallel-processing - Elphel camera array images post processing using GNU parallel
+#
+# Copyright (c) 2013-2014 FOXEL SA - http://foxel.ch
+# Please read <http://foxel.ch/license> for more information.
+#
+# Author(s):
+#
+#      Luc Deschenaux <l.deschenaux@foxel.ch>
+#      Kevin Velickovic <k.velickovic@foxel.ch>
+#
+# This file is part of the FOXEL project <http://foxel.ch>.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#
+# Additional Terms:
+#
+#      You are required to preserve legal notices and author attributions in
+#      that material or in the Appropriate Legal Notices displayed by works
+#      containing it.
+#
+#      You are required to attribute the work as explained in the "Usage and
+#      Attribution" section of <http://foxel.ch/license>.
+
+[ -n "$DEBUG" ] && set -x
+
+usage() {
+  echo "usage: $(basename $0) ls <source_dir> <image_from> <image_to>"
+  echo "       $(basename $0) [ cp | symlink | hardlink ] <dest_dir> <source_dir> <image_from> <image_to>"
+  echo
+  exit $1
+}
+
+[ $# -eq 0 ] && usage 1
+
+case "$1" in 
+  -h)
+    usage 0
+    ;;
+  hardlink)
+    [ $# -ne 5 ] && usage 1
+    CMD=ln
+    shift
+    DEST_DIR=$1
+    shift
+    ;;
+  symlink)
+    [ $# -ne 5 ] && usage 1
+    CMD=ln
+    OPT=-s
+    shift
+    DEST_DIR=$1
+    shift
+    ;;
+  cp)
+    [ $# -ne 5 ] && usage 1
+    CMD=cp
+    shift
+    DEST_DIR=$1
+    shift
+    ;;
+  ls)
+    [ $# -ne 4 ] && usage 1
+    exec list_files "$2" "$3" "$4"
+    exit
+    ;;
+esac
+
+mkdir -p $DEST_DIR || exit
+    
+list_files $@ | while read f ; do
+  BASE=$(basename $f)
+  echo "$DEST_DIR/$BASE"
+  $CMD $OPT "$f" "$DEST_DIR/$BASE"
+done
+
+
