@@ -37,31 +37,54 @@
 
 [ -n "$DEBUG" ] && set -x
 
-# ignore shebang options since limited to 128 characters
-BANG_OPTIONS="$1"
-shift
+usage() {
+  echo "usage: $(basename $0) ls <source_dir> <image_from> <image_to>"
+  echo "       $(basename $0) [ cp | symlink | hardlink ] <dest_dir> <source_dir> <image_from> <image_to>"
+  echo
+  exit $1
+}
 
-INPUT="$1"
-shift
+[ $# -eq 0 ] && usage 1
 
-# grab hashbang options with sed instead
-BANG_OPTIONS=$(head -n 1 "$INPUT" | sed -r -e 's/.*'$(basename "$0")'(.*)/\1/')
+case "$1" in 
+  -h)
+    usage 0
+    ;;
+  hardlink)
+    [ $# -ne 5 ] && usage 1
+    CMD=ln
+    shift
+    DEST_DIR=$1
+    shift
+    ;;
+  symlink)
+    [ $# -ne 5 ] && usage 1
+    CMD=ln
+    OPT=-s
+    shift
+    DEST_DIR=$1
+    shift
+    ;;
+  cp)
+    [ $# -ne 5 ] && usage 1
+    CMD=cp
+    shift
+    DEST_DIR=$1
+    shift
+    ;;
+  ls)
+    [ $# -ne 4 ] && usage 1
+    exec list_files "$2" "$3" "$4"
+    exit
+    ;;
+esac
 
-if [ "$1" == "-f" ] ; then
-  FOLLOW=-f
-  shift
-fi
+mkdir -p $DEST_DIR || exit
+    
+list_files $@ | while read f ; do
+  BASE=$(basename $f)
+  echo "$DEST_DIR/$BASE"
+  $CMD $OPT "$f" "$DEST_DIR/$BASE"
+done
 
-(
-  SUBASH_PID=$BASHPID
-  tail -n +2 $FOLLOW "$INPUT" | while read l ; do
-    if [ "$l" == "EOP" ] ; then
-      EOP=1
-      kill $SUBASH_PID
-      break
-    fi
-    echo $l
-  done
-  
-) | parallel --gnu $@ $BANG_OPTIONS
 
