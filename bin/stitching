@@ -73,6 +73,8 @@ fi
 [ -z "$LOGDIR" ] && LOGDIR=log/stitching
 mkdir -p $LOGDIR
 
+mkdir -p $DSTDIR
+
 if [ -z "$REMOTESCRIPT" ] ; then
   REMOTESCRIPT=$(which stitch.sh)
   REMOTESCRIPT=${REMOTESCRIPT#$HOME/}
