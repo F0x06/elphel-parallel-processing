@@ -82,4 +82,4 @@ eqrdone() {
   done
 }
 
-exec $FIJI --headless --allow-multiple --mem $MEM --run Eyesis_Correction prefs=$XML 2>&1 | tee | stitch
+exec $FIJI --headless --allow-multiple --mem $MEM --run Eyesis_Correction prefs=$XML 2>&1 | stitch
