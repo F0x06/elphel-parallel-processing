@@ -36,15 +36,50 @@
 #      You are required to attribute the work as explained in the "Usage and
 #      Attribution" section of <http://foxel.ch/license>.
 
+set -e
+
 FIJI=ImageJ-linux64
 
+if [ "$1" = "-stitch" ] ; then
+  if [ $# -lt 3 ] ; then
+    usage 1
+  fi
+  STITCH=1
+  shift
+  STITCH_DESTDIR=$1
+  shift
+fi
+
 if [ $# -lt 1 ] ; then
-  echo "usage: $(basename $0) <eyesis_correction_xml> [ <memory> ]"
+  echo "usage: $(basename $0) [ -stitch <dest_dir> ] <eyesis_correction_xml> [ <memory> ]"
   exit 1
 fi
 
 XML="$1"
+XML_TIMESTAMP=($(basename $XML | tr '.' ' '))
+EQRDONE=$(dirname "$XML")/${XML_TIMESTAMP[0]}
+
 MEM="$2"
 [ -z "$MEM" ] && MEM="7150m"
 
-exec $FIJI --headless --allow-multiple --mem $MEM --run Eyesis_Correction prefs=$XML 2>&1
+stitch() {
+  tee |
+  awk '/Saving equirectangular/{print $NF}' |
+  sed -r -n -e 's/.*\/([0-9_]{18})-([0-9]{2})-.*/\1 \2/p' |
+  eqrdone |
+  parallel stitch.sh  ## TODO: pass parameters ... 
+}
+
+eqrdone() {
+  while read EQR ; do
+    [ -z "$STITCH" ] && continue
+    EQR=($EQR)
+    TIMESTAMP=${EQR[0]}
+    CHANNEL=${EQR[1]}
+    echo $CHANNEL >> "$EQRDONE-$TIMESTAMP-EQR.txt"
+    count=$(sort -u "$EQRDONE" | wc -l)
+    [ "$count" = "29" ] && echo $TIMESTAMP
+  done
+}
+
+exec $FIJI --headless --allow-multiple --mem $MEM --run Eyesis_Correction prefs=$XML 2>&1 | tee | stitch
