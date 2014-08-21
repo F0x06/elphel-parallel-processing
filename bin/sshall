@@ -95,7 +95,7 @@ sshlog() {
   HOST=${ARG[0]}
   PORT=${ARG[1]}
   [ -z "$PORT" ] && PORT=22
-  STATUS_FILE=/tmp/status.$$.tmp
+  STATUS_FILE=$(mktemp)
   echo 1 > $STATUS_FILE
   shift
   { ssh -p $PORT $SSHOPTIONS $HOST $@ 2>&3 | while read stdout ; do
@@ -112,10 +112,12 @@ sshlog() {
 
 for (( i=0; $i<${#userathost[@]} ; ++i )) do
   if [ -n "$SCRIPT" ] ; then
-    ( sshlog ${userathost[$i]} $@ ; echo $THIS: ${userathost[$i]} status $? ) &
+    ( sshlog ${userathost[$i]} $@ < "$SCRIPT" ; echo $THIS: ${userathost[$i]} status $? ) &
   else
     ( sshlog ${userathost[$i]} $@ ; echo $THIS: ${userathost[$i]} status $? ) &
   fi
+  PID_LIST="$PID_LIST $!"
 done
 
+trap "kill -9 $PID_LIST" EXIT
 wait
