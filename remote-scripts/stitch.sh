@@ -65,6 +65,8 @@ t=$TIMESTAMP
      rm $DSTDIR/result_${t}_mid.tif
      rm $DSTDIR/result_${t}_bot.tif
 
+     echo $t >> $DSTDIR/stitched.txt
+
 } 2>&1
 
 
