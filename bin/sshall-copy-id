@@ -37,6 +37,10 @@
 
 [ -n "$DEBUG" ] && set -x
 
-SSHLOGINFILE=$1
-[ -z "$SSHLOGINFILE" ] && SSHLOGINFILE=~/.parallel/sshloginfile
-sshlist $SSHLOGINFILE | parallel -j1 ssh-copy-id
+if [ -z "$HOSTS" ] ; then
+  SSHLOGINFILE=$1
+  [ -z "$SSHLOGINFILE" ] && SSHLOGINFILE=~/.parallel/sshloginfile
+  HOSTS=$(sshlist $SSHLOGINFILE)
+fi
+
+echo $HOSTS | parallel -j1 ssh-copy-id
