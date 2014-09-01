@@ -40,46 +40,34 @@ set -e
 
 FIJI=ImageJ-linux64
 
-if [ "$1" = "-stitch" ] ; then
-  if [ $# -lt 3 ] ; then
-    usage 1
-  fi
-  STITCH=1
-  shift
-  STITCH_DESTDIR=$1
-  shift
-fi
-
 if [ $# -lt 1 ] ; then
-  echo "usage: $(basename $0) [ -stitch <dest_dir> ] <eyesis_correction_xml> [ <memory> ]"
+  echo "usage: $(basename $0) <eyesis_correction_xml> [ <memory> ]"
   exit 1
 fi
 
 XML="$1"
-XML_TIMESTAMP=($(basename $XML | tr '.' ' '))
-EQRDONE=$(dirname "$XML")/${XML_TIMESTAMP[0]}
+DESTDIR=$(grep CORRECTION_PARAMETERS.resultsDirectory $XML | sed -r -n -e 's/.*CORRECTION_PARAMETERS.resultsDirectory\">([^<]+).*/\1/p')
+PROCESSED_LIST="$DESTDIR/processed.txt"
 
 MEM="$2"
 [ -z "$MEM" ] && MEM="7150m"
 
-stitch() {
-  tee |
-  awk '/Saving equirectangular/{print $NF}' |
-  sed -r -n -e 's/.*\/([0-9_]{18})-([0-9]{2})-.*/\1 \2/p' |
-  eqrdone |
-  parallel stitch.sh  ## TODO: pass parameters ... 
-}
-
-eqrdone() {
-  while read EQR ; do
-    [ -z "$STITCH" ] && continue
-    EQR=($EQR)
-    TIMESTAMP=${EQR[0]}
-    CHANNEL=${EQR[1]}
-    echo $CHANNEL >> "$EQRDONE-$TIMESTAMP-EQR.txt"
-    count=$(sort -u "$EQRDONE" | wc -l)
-    [ "$count" = "29" ] && echo $TIMESTAMP
+processed_list_update() {
+  inotifywait -m -e close_write $DESTDIR | while read EVENT ; do
+    sed -r -n -e 's/.* ([0-9_]{18})-([0-9]{2})-.*EQR.tiff$/\1 \2/p' |
+    while read EQR ; do
+      EQR=($EQR)
+      IMG_TIMESTAMP=${EQR[0]}
+      count=$(ls -1 $DESTDIR/$IMG_TIMESTAMP-* | wc -l)
+      [ "$count" = "29" ] && echo $IMG_TIMESTAMP >> "$PROCESSED_LIST"
+    done
   done
 }
 
-exec $FIJI --headless --allow-multiple --mem $MEM --run Eyesis_Correction prefs=$XML 2>&1 | stitch
+processed_list_update &
+CHILD_PID=$!
+
+trap "kill -9 $CHILD_PID" EXIT SIGINT SIGKILL SIGABRT
+
+$FIJI --headless --allow-multiple --mem $MEM --run Eyesis_Correction prefs=$XML 2>&1
+
