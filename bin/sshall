@@ -95,25 +95,29 @@ sshlog() {
   HOST=${ARG[0]}
   PORT=${ARG[1]}
   [ -z "$PORT" ] && PORT=22
+  STATUS_FILE=$(mktemp)
+  echo 1 > $STATUS_FILE
   shift
   { ssh -p $PORT $SSHOPTIONS $HOST $@ 2>&3 | while read stdout ; do
        echo "$THIS: ${HOST} stdout $stdout"
     done
-    echo ${PIPESTATUS[0]} > /tmp/$$
+    echo ${PIPESTATUS[0]} > $STATUS_FILE
   } 3>&1 >&2 | while read stderr ; do
     echo "$THIS: ${HOST} stderr $stderr"
   done
-  STATUS=$(cat /tmp/$$)
-  rm /tmp/$$
+  STATUS=$(cat $STATUS_FILE)
+  rm $STATUS_FILE
   return $STATUS
 }
 
 for (( i=0; $i<${#userathost[@]} ; ++i )) do
   if [ -n "$SCRIPT" ] ; then
-    ( sshlog ${userathost[$i]} $@ ; echo $THIS: ${userathost[$i]} status $? ) &
+    ( sshlog ${userathost[$i]} $@ < "$SCRIPT" ; echo $THIS: ${userathost[$i]} status $? ) &
   else
     ( sshlog ${userathost[$i]} $@ ; echo $THIS: ${userathost[$i]} status $? ) &
   fi
+  PID_LIST="$PID_LIST $!"
 done
 
+trap "kill -9 $PID_LIST" EXIT
 wait
