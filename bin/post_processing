@@ -45,13 +45,14 @@ if [ "$1" = "-s" -o "$1" = "--shuffle" ] ; then
 fi
 
 if [ $# -lt 2 -o $# -gt 6 ] ; then
-  echo "Usage: $(basename $0) <eyesis_correction_xml> <source_dir> [ <results_dir>  <output_file> <split_at> <truncate> ]"
+  echo "Usage: $(basename $0) [ -s | --shuffle ] <eyesis_correction_xml> <source_dir> [ <results_dir>  <output_file> <split_at> <truncate> ]"
   echo
   echo "- When no output file is specified, parallel is run immediately"
   echo "- Paths for corrxml can be specified as environment variables"
   echo "- IMAGEJMEM, REMOTELOGGER, FILELIST, LOGDIR, REMOTESCRIPT too"
   echo "- <split_at> defaults to 9. When you want only the 8 first channels"
   echo "  per timestamp then set <split_at> to 8 and <truncate> to true"
+  echo "- use --shuffle to process timestamps by half steps"
   echo
   exit 1
 fi
@@ -75,11 +76,16 @@ fi
 
 getTimestamps() {
     while read JP4 ; do
-        echo $(basename $JP4) | sed -r -n -e 's/^([0-9]{10}_[0-9]{6})_.*/\1/p'
-    done | sort -u
+      # extract timestamps
+      echo $(basename $JP4) | sed -r -n -e 's/^([0-9]{10}_[0-9]{6})_.*/\1/p'
+    done | sort -u | while read timestamp ; do
+      # echo timestamp only if theres not yet 55 files with it
+      [ $(ls "$DSTDIR/$timestamp"*.tiff 2>/dev/null | wc -l) -eq 55 ] || echo $timestamp
+    done
 }
 
-shuffile() {                                                                                                                                          
+# list timestamps sequentially with step=length/2, then recursively each time with step/=2
+shuffile() {
   argv=($(cat "$FILELIST" | getTimestamps))
   argc=${#argv[*]}
   last=$(expr $argc - 1)
@@ -116,25 +122,32 @@ shuffile() {
     ((step/=2))
   done
 }
-  
+
+# current timestamp
 NOW=$(date +%s) # _%N
 
+# if no output script name specified
+# 1. first generate one,
+# 2. ask to run parallel with this file as job queue, without waiting for the complete list
 if [ -z "$OUTPUT" ] ; then
      OUTPUT="post_processing-$NOW"
      RUN=yes
 fi
 
+# set logdir if not specified as environment variable
 [ -z "$LOGDIR" ] && LOGDIR=log/post_processing
 mkdir -p $LOGDIR
 
+# set remotescript if not specified as environment variable
 if [ -z "$REMOTESCRIPT" ] ; then
   REMOTESCRIPT=$(which post_process.sh)
   REMOTESCRIPT=${REMOTESCRIPT#$HOME/}
 fi
 
-[ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=remote-scripts/post_process.sh
+[ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=bin/post_process.sh
 mkdir -p $SRCDIR/../post_processing
 
+# list files in SRCDIR if cached list not specified as FILELIST environment variable
 getfilelist() {
   if [ -z "$FILELIST" ] ; then
     FILELIST="/tmp/filelist_$NOW.tmp"
@@ -149,6 +162,7 @@ getfilelist() {
   fi
 }
 
+# set parallelbang executable relative path if not specified as environment variable
 if [ -z "$PBANG" ] ; then
   PBANG=$(which parallelbang)
   PBANG=${PBANG#$HOME/}
@@ -156,10 +170,11 @@ fi
 
 [ -z "$PBANG" ] && PBANG=bin/parallelbang
 
+# create ~/.parallel/sshloginfile if needed
 mkdir -p ~/.parallel
 [ -f ~/.parallel/sshloginfile ] || touch ~/.parallel/sshloginfile  
 
-echo "#!$PBANG --gnu -I _XML_ --ungroup --sshloginfile .. --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
+echo "#!$PBANG --gnu -I _XML_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
 chmod +x "$OUTPUT"
 
 doit() {
