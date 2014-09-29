@@ -3,6 +3,7 @@ INSTALL_PATH?=~
 all: install
 
 install:
-	cp bin/* ${INSTALL_PATH}/bin
-	cp remote-scripts/* ${INSTALL_PATH}/bin
-	cp corrxml/corrxml.sh ${INSTALL_PATH}/bin
+	mkdir -p ${INSTALL_PATH}/bin
+	ln bin/* ${INSTALL_PATH}/bin
+	ln remote-scripts/* ${INSTALL_PATH}/bin
+	ln corrxml/corrxml.sh ${INSTALL_PATH}/bin
