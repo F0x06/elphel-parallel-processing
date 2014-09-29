@@ -38,5 +38,5 @@
 
 HOSTNAME=$(hostname)
 while read l ; do
-  echo $(date +%F_%r) $@ $PARALLEL_PID $PARALLEL_SEQ $HOSTNAME $l
+  echo $(date +%F_%R:%S) $@ $PARALLEL_PID $PARALLEL_SEQ $HOSTNAME $l
 done
