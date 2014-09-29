@@ -38,6 +38,8 @@
 
 set -e
 
+#set -x
+
 FIJI=ImageJ-linux64
 
 if [ $# -lt 1 ] ; then
@@ -52,22 +54,22 @@ PROCESSED_LIST="$DESTDIR/processed.txt"
 MEM="$2"
 [ -z "$MEM" ] && MEM="7150m"
 
-processed_list_update() {
-  inotifywait -m -e close_write $DESTDIR | while read EVENT ; do
-    sed -r -n -e 's/.* ([0-9_]{18})-([0-9]{2})-.*EQR.tiff$/\1 \2/p' |
-    while read EQR ; do
-      EQR=($EQR)
-      IMG_TIMESTAMP=${EQR[0]}
-      count=$(ls -1 $DESTDIR/$IMG_TIMESTAMP-* | wc -l)
-      [ "$count" = "29" ] && echo $IMG_TIMESTAMP >> "$PROCESSED_LIST"
-    done
-  done
-}
+#processed_list_update() {
+#  inotifywait -m -e close_write $DESTDIR | while read EVENT ; do
+#    sed -r -n -e 's/.* ([0-9_]{18})-([0-9]{2})-.*EQR.tiff$/\1 \2/p' |
+#    while read EQR ; do
+#      EQR=($EQR)
+#      IMG_TIMESTAMP=${EQR[0]}
+#      count=$(ls -1 $DESTDIR/$IMG_TIMESTAMP-* | wc -l)
+#      [ "$count" = "29" ] && echo $IMG_TIMESTAMP >> "$PROCESSED_LIST"
+#    done
+#  done
+#}
 
-processed_list_update &
-CHILD_PID=$!
+#processed_list_update &
+#CHILD_PID=$!
 
-trap "kill -9 $CHILD_PID" EXIT SIGINT SIGKILL SIGABRT
+#trap "kill -9 $CHILD_PID" EXIT SIGINT SIGKILL SIGABRT
 
-$FIJI --headless --allow-multiple --mem $MEM --run Eyesis_Correction prefs=$XML 2>&1
+exec $FIJI --headless --allow-multiple --mem $MEM --run Eyesis_Correction prefs=$XML 2>&1
 
