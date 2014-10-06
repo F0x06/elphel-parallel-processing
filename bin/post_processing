@@ -98,11 +98,11 @@ shuffile() {
       if [ -n "$stamp" ] ; then
         grep -e $stamp "$FILELIST" > /tmp/jp4.$$.tmp
         argv[$i]=
-        jp4_count=($(wc -l /tmp/jp4..$$.tmp))
+        jp4_count=($(wc -l /tmp/jp4.$$.tmp))
         if [ ${jp4_count[0]} -eq 9 ] ; then
           cat /tmp/jp4.$$.tmp
         else
-          echo "Warning: $t discarded (jp4 count is ${jp4_count[0]})"
+          echo "Warning: $stamp discarded (jp4 count is ${jp4_count[0]})" >&2
         fi
         rm /tmp/jp4.$$.tmp
       fi
@@ -114,7 +114,7 @@ shuffile() {
       if [ ${jp4_count[0]} -eq 9 ] ; then
         cat /tmp/jp4.$$.tmp
       else
-        echo "Warning: $t discarded (jp4 count is ${jp4_count[0]})"
+        echo "Warning: $stamp discarded (jp4 count is ${jp4_count[0]})" >&2
       fi
       rm /tmp/jp4.$$.tmp
     fi
