@@ -81,8 +81,8 @@ getTimestamps() {
       JP4=$(basename $JP4)
       echo ${JP4:0:17}
     done | sort -u | while read timestamp ; do
-      # echo timestamp only if theres not yet 27 files with it
-      [ $(find "$DSTDIR" -name $timestamp\*EQR.tiff 2>/dev/null | wc -l) -ne 27 ] && echo $timestamp
+      # echo timestamp only if theres not yet 29 files with it
+      [ $(find "$DSTDIR" -name $timestamp\*EQR.tiff 2>/dev/null | wc -l) -ne 29 ] && echo $timestamp
     done
 }
 
