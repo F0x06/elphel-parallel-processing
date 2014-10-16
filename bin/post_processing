@@ -45,7 +45,7 @@ if [ "$1" = "-s" -o "$1" = "--shuffle" ] ; then
 fi
 
 if [ $# -lt 2 -o $# -gt 6 ] ; then
-  echo "Usage: $(basename $0) [ -s | --shuffle ] <eyesis_correction_xml> <source_dir> [ <results_dir>  <output_file> <split_at> <truncate> ]"
+  echo "Usage: $(basename $0) [ -s | --shuffle ] <eyesis_correction_xml> <source_dir> [ <results_dir>  <output_script> <split_at> <truncate> ]"
   echo
   echo "- When no output file is specified, parallel is run immediately"
   echo "- Paths for corrxml can be specified as environment variables"
@@ -66,6 +66,7 @@ TRUNCATE="$6"
 
 [ -z "$SPLITAT" ] && SPLITAT=9  # channels per job (xml)
 [ -z "$IMAGEJMEM" ] && IMAGEJMEM=7150m
+[ -z "$FOLDER_MAX" ] && FOLDER_MAX=90000
 
 if [ -z "$REMOTELOGGER" ] ; then
   REMOTELOGGER=$(which paralog.sh)
@@ -77,10 +78,11 @@ fi
 getTimestamps() {
     while read JP4 ; do
       # extract timestamps
-      echo $(basename $JP4) | sed -r -n -e 's/^([0-9]{10}_[0-9]{6})_.*/\1/p'
+      JP4=$(basename $JP4)
+      echo ${JP4:0:17}
     done | sort -u | while read timestamp ; do
-      # echo timestamp only if theres not yet 55 files with it
-      [ $(ls "$DSTDIR/$timestamp"*.tiff 2>/dev/null | wc -l) -eq 55 ] || echo $timestamp
+      # echo timestamp only if theres not yet 27 files with it
+      [ $(find "$DSTDIR" -name $timestamp\*EQR.tiff 2>/dev/null | wc -l) -ne 27 ] && echo $timestamp
     done
 }
 
@@ -88,7 +90,7 @@ getTimestamps() {
 shuffile() {
   argv=($(cat "$FILELIST" | getTimestamps))
   argc=${#argv[*]}
-  last=$(expr $argc - 1)
+  last=$((argc - 1))
   [ $last -eq 0 ] && last=1
   step=$(expr $argc / 2)
   [ $step -eq 0 ] && step=1
@@ -96,27 +98,24 @@ shuffile() {
     for (( i=0; i<$argc ; i+=step )) ; do
       stamp="${argv[$i]}"
       if [ -n "$stamp" ] ; then
-        grep -e $stamp "$FILELIST" > /tmp/jp4.$$.tmp
         argv[$i]=
-        jp4_count=($(wc -l /tmp/jp4.$$.tmp))
-        if [ ${jp4_count[0]} -eq 9 ] ; then
-          cat /tmp/jp4.$$.tmp
+        jp4_count=$(grep -e $stamp "$FILELIST" | wc -l)
+        if [ $jp4_count -eq 9 ] ; then
+          echo $stamp
         else
-          echo "Warning: $stamp discarded (jp4 count is ${jp4_count[0]})" >&2
+          echo "Warning: $stamp discarded (jp4 count is $jp4_count)" >&2
         fi
-        rm /tmp/jp4.$$.tmp
       fi
     done
     if [ -n "${argv[$last]}" ] ; then
-      grep -e ${argv[$last]} "$FILELIST" > /tmp/jp4.$$.tmp
-      argv[argc-1]=0
-      jp4_count=($(wc -l /tmp/jp4.$$.tmp))
-      if [ ${jp4_count[0]} -eq 9 ] ; then
-        cat /tmp/jp4.$$.tmp
+      stamp=${argv[$last]}
+      argv[$last]=
+      jp4_count=$(grep -e $stamp "$FILELIST" | wc -l)
+      if [ $jp4_count -eq 9 ] ; then
+        echo $stamp
       else
-        echo "Warning: $stamp discarded (jp4 count is ${jp4_count[0]})" >&2
+        echo "Warning: $stamp discarded (jp4 count is $jp4_count)" >&2
       fi
-      rm /tmp/jp4.$$.tmp
     fi
     [ $step -eq 1 ] && break
     ((step/=2))
@@ -131,7 +130,7 @@ NOW=$(date +%s) # _%N
 # 2. ask to run parallel with this file as job queue, without waiting for the complete list
 if [ -z "$OUTPUT" ] ; then
      OUTPUT="post_processing-$NOW"
-     RUN=yes
+     RUN=true
 fi
 
 # set logdir if not specified as environment variable
@@ -151,14 +150,14 @@ mkdir -p $SRCDIR/../post_processing
 getfilelist() {
   if [ -z "$FILELIST" ] ; then
     FILELIST="/tmp/filelist_$NOW.tmp"
-    find "$SRCDIR" -maxdepth 1 -name \*.jp4 | sort > $FILELIST
+    find "$SRCDIR" -maxdepth 2 -name \*.jp4 | sort > $FILELIST
   else
     echo "Using files listed in $FILELIST" 1>&2
   fi
   if [ -n "$SHUFFLE" ] ; then
     shuffile
   else
-    cat "$FILELIST"
+    cat "$FILELIST" | getTimestamps
   fi
 }
 
@@ -170,9 +169,13 @@ fi
 
 [ -z "$PBANG" ] && PBANG=bin/parallelbang
 
+# generate hashbang
 echo "#!$PBANG --gnu -I _XML_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
 chmod +x "$OUTPUT"
 
+# Generate and list imagej-elphel xml files
+export COUNT=0
+export FOLDER_NUM=0
 doit() {
   if (( $SPLITAT > 9 )) ; then
     OUTXML=$SRCDIR/../post_processing/${NOW}.xml
@@ -181,15 +184,22 @@ doit() {
   else
     # FILELIST is also used in corrxml.sh
     export FILELIST
-    getfilelist | getTimestamps | while read TIMESTAMP ; do
+    getfilelist | while read TIMESTAMP ; do
       OUTXML=$SRCDIR/../post_processing/${NOW}-$TIMESTAMP.xml
-      corrxml.sh $XML $SRCDIR $DSTDIR $OUTXML $SPLITAT $TIMESTAMP $TRUNCATE
+      corrxml.sh $XML $SRCDIR $DSTDIR/$FOLDER_NUM $OUTXML $SPLITAT $TIMESTAMP $TRUNCATE
       find $(dirname $OUTXML) -maxdepth 1 -type f -name $(basename $OUTXML .xml)\* | sort
+      ((COUNT+=SPLITAT))
+      if [ $COUNT -ge $FOLDER_MAX ] ; then
+        ((++FOLDER_NUM))
+        COUNT=0
+      fi
     done
   fi
 }
 
-if [ -n "$RUN" ] ; then
+# generate output script. run immediatly if RUN==true
+# (if not set manually ,RUN will is set to true when <output_script> is ommited)
+if [ "$RUN" = "true" ] ; then
   echo "#### running $OUTPUT" 1>&2
   doit | tee -a "$OUTPUT" | parallel --gnu -I _XML_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \| $REMOTELOGGER $(basename $OUTPUT)
 else
