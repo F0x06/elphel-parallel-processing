@@ -54,7 +54,7 @@ timestampPrefix() {
   LEN=${#TSA}
 
   for (( i=1; $i<=$LEN; ++i )) do
-    if [ ${TSA:0:$i} != ${TSB:0:$i} ] ; then
+    if [ "${TSA:0:$i}" != "${TSB:0:$i}" ] ; then
       ((--i))
       FROMDIGIT=${TSA:$i:1}
       TODIGIT=${TSB:$i:1}
