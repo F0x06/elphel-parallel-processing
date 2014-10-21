@@ -47,29 +47,16 @@ if [ $# -lt 1 ] ; then
   exit 1
 fi
 
-XML="$1"
-DESTDIR=$(grep CORRECTION_PARAMETERS.resultsDirectory $XML | sed -r -n -e 's/.*CORRECTION_PARAMETERS.resultsDirectory\">([^<]+).*/\1/p')
-PROCESSED_LIST="$DESTDIR/processed.txt"
-
+IMAGEJ_ELPHEL_XML="$1"
 MEM="$2"
 [ -z "$MEM" ] && MEM="7150m"
 
-#processed_list_update() {
-#  inotifywait -m -e close_write $DESTDIR | while read EVENT ; do
-#    sed -r -n -e 's/.* ([0-9_]{18})-([0-9]{2})-.*EQR.tiff$/\1 \2/p' |
-#    while read EQR ; do
-#      EQR=($EQR)
-#      IMG_TIMESTAMP=${EQR[0]}
-#      count=$(ls -1 $DESTDIR/$IMG_TIMESTAMP-* | wc -l)
-#      [ "$count" = "29" ] && echo $IMG_TIMESTAMP >> "$PROCESSED_LIST"
-#    done
-#  done
-#}
+DESTDIR= $(grep CORRECTION_PARAMETERS.resultsDirectory $IMAGEJ_ELPHEL_XML | sed -r -e 's/.*>([^<]+).*/\1/')
+BASE=$(basename $IMAGEJ_ELPHEL_XML)
+TIMESTAMP=${BASE:11:17}
 
-#processed_list_update &
-#CHILD_PID=$!
+# assume there's only 9 jp4 in the xml and timestamp is TIMESTAMP
+[ $(find $DESTDIR -name $TIMESTAMP\*.tiff | wc -l) -lt 29 ] || exit 0
 
-#trap "kill -9 $CHILD_PID" EXIT SIGINT SIGKILL SIGABRT
-
-exec $FIJI --headless --allow-multiple --mem $MEM --run Eyesis_Correction prefs=$XML 2>&1
+exec $FIJI --headless --allow-multiple --mem $MEM --run Eyesis_Correction prefs=$IMAGEJ_ELPHEL_XML 2>&1
 
