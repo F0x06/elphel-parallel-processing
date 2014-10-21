@@ -197,9 +197,9 @@ doit() {
   fi
 }
 
-# generate output script. run immediatly if RUN==true
+# generate output script. run immediatly if RUN==true or yes
 # (if not set manually ,RUN will is set to true when <output_script> is ommited)
-if [ "$RUN" = "true" ] ; then
+if [ "$RUN" = "true" -o "$RUN" = yes ] ; then
   echo "#### running $OUTPUT" 1>&2
   doit | tee -a "$OUTPUT" | parallel --gnu -I _XML_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \| $REMOTELOGGER $(basename $OUTPUT)
 else
