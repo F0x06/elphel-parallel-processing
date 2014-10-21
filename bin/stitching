@@ -35,6 +35,8 @@
 #      You are required to attribute the work as explained in the "Usage and
 #      Attribution" section of <http://foxel.ch/license>.
 
+[ -n "$DEBUG" ] && set -x
+
 set -e
 
 usage() {
@@ -68,7 +70,7 @@ NOW=$(date +%s) # _%N
 getfilelist() {
   if [ -z "$FILELIST" ] ; then
     FILELIST="/tmp/filelist_stitch_$NOW.tmp"
-    find "$SRCDIR" -maxdepth 1 -name \*.tiff > $FILELIST
+    find "$SRCDIR" -maxdepth 2 -name \*.tiff > $FILELIST
   else
     echo "Using files listed in $FILELIST" 1>&2
   fi
