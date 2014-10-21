@@ -38,9 +38,14 @@
 set -e
 
 usage() {
-     echo "Usage: $(basename $0) <Source directory> <Destination Directory> [ <Black point> <White point> <Quality> <Output_file> ]"
+     echo "Usage: $(basename $0) [ -s || --shuffle ] <Source directory> <Destination Directory> [ <Black point> <White point> <Quality> <Output_file> ]"
      exit $1
 }
+
+if [ "$1" == "-s" -o "$1" == "--shufffle" ] ; then
+  SHUFFLE=true
+  shift
+fi
 
 [ $# -lt 2 -o $# -gt 6 ] && usage 1
 [ "$1" = "-h" ] && usage 0
@@ -57,17 +62,59 @@ OUTPUT="$6"
 [ -z "$WHITEPOINT" ] && WHITEPOINT=100
 
 
+# current timestamp
+NOW=$(date +%s) # _%N
+
+getfilelist() {
+  if [ -z "$FILELIST" ] ; then
+    FILELIST="/tmp/filelist_stitch_$NOW.tmp"
+    find "$SRCDIR" -maxdepth 1 -name \*.tiff > $FILELIST
+  else
+    echo "Using files listed in $FILELIST" 1>&2
+  fi
+  if [ -n "$SHUFFLE" ] ; then
+    shuffile
+  else
+    cat "$FILELIST" | getTimestamps
+  fi
+}
+
 getTimestamps() {
-    find "$SRCDIR" -maxdepth 1 -name \*.tiff | while read TIFF ; do
-        echo $(basename $TIFF) | sed -r -n -e 's/^([0-9]{10}_[0-9]{6})-.*/\1/p'
-    done | sort -u
+  while read TIFF ; do
+    TIFF=$(basename $TIFF)
+    echo ${TIFF:0:17}
+  done | sort -u 
+}
+
+# list timestamps sequentially with step=length/2, then recursively each time with step/=2
+shuffile() {
+  argv=($(cat "$FILELIST" | getTimestamps))
+  argc=${#argv[*]}
+  last=$((argc - 1))
+  [ $last -eq 0 ] && last=1
+  step=$(expr $argc / 2)
+  [ $step -eq 0 ] && step=1
+  while true ; do
+    for (( i=0; i<$argc ; i+=step )) ; do
+      if [ -n "${argv[$i]}" ] ; then
+        echo ${argv[$i]}
+        argv[$i]=
+      fi
+    done
+    if [ -n "${argv[$last]}" ] ; then
+      echo ${argv[$last]}
+      argv[$last]=
+    fi
+    [ $step -eq 1 ] && break
+    ((step/=2))
+  done
 }
 
 NOW=$(date +%s) # _%N
 
 if [ -z "$OUTPUT" ] ; then
   OUTPUT="stitching-$NOW"
-  RUN=yes
+  RUN=true
 fi
 
 [ -z "$LOGDIR" ] && LOGDIR=log/stitching
@@ -104,12 +151,12 @@ echo "#!$PBANG --gnu -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPU
 chmod +x "$OUTPUT"
 
 doit() {
-  getTimestamps | while read TIMESTAMP ; do
-    [ -s "$DSTDIR/result_$TIMESTAMP.tif" ] || echo $TIMESTAMP
+  getfilelist | while read TIMESTAMP ; do
+    [ -s "$DSTDIR/result_${TIMESTAMP}-0-25-1.jpeg" ] || echo $TIMESTAMP
   done
 }
 
-if [ -n "$RUN" ] ; then
+if [ "$RUN" == "true" -o "$RUN" == "yes" ] ; then
   echo "#### running $OUTPUT" 1>&2
   doit | tee -a "$OUTPUT" | parallel --gnu -I _TIMESTAMP_ --ungroup --sshloginfile .. --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \| $REMOTELOGGER $(basename $OUTPUT)
 else
