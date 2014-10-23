@@ -63,8 +63,8 @@ fi
     echo $l
   done < $FIFO
   
-  rm $FIFO
   kill $TAIL_PID 2> /dev/null
+  rm $FIFO
   
 ) | parallel --gnu $@ $BANG_OPTIONS
 
