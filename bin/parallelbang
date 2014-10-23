@@ -53,7 +53,7 @@ if [ "$1" == "-f" ] ; then
 fi
 
 (
-  FIFO=$(mktemp)
+  FIFO=$(mktemp -u).$$
   mkfifo $FIFO
   tail -n +2 $FOLLOW "$INPUT" > $FIFO &
   TAIL_PID=$!
@@ -64,7 +64,7 @@ fi
   done < $FIFO
   
   rm $FIFO
-  kill $TAIL_PID
+  kill $TAIL_PID 2> /dev/null
   
 ) | parallel --gnu $@ $BANG_OPTIONS
 
