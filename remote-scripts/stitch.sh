@@ -48,14 +48,17 @@ TIMESTAMP=$3
 
 t=$TIMESTAMP
 
-trap "rm $DSTDIR/.result_${t}_{top,mid,bot}.tif $DSTDIR/.result_${t}-0-25-1.jpeg 2>/dev/null" EXIT
+TMP=$(mktemp -u --tmpdir=/dev/shm).stitch.$$
+mkdir -p $TMP || exit
 
-[ -f DSTDIR/result_${t}-0-25-1.jpeg ] && exit 0
+trap "rm -r $TMPDIR 2>/dev/null" EXIT SIGINT SIGTERM
+
+[ -f $DSTDIR/result_${t}-0-25-1.jpeg ] && exit 0
 
 {
      set -e
      
-     enblend-mp -w -o $DSTDIR/.result_${t}_top.tif \
+     enblend-mp -w -o $TMP/result_${t}_top.tif \
         $SRCDIR/${t}-12-DECONV-RGB24_EQR-RIGHT.tiff \
         $SRCDIR/${t}-13-DECONV-RGB24_EQR.tiff \
         $SRCDIR/${t}-14-DECONV-RGB24_EQR.tiff \
@@ -66,7 +69,7 @@ trap "rm $DSTDIR/.result_${t}_{top,mid,bot}.tif $DSTDIR/.result_${t}-0-25-1.jpeg
         $SRCDIR/${t}-11-DECONV-RGB24_EQR.tiff \
         $SRCDIR/${t}-12-DECONV-RGB24_EQR-LEFT.tiff
 
-     enblend-mp -w -o $DSTDIR/.result_${t}_mid.tif \
+     enblend-mp -w -o $TMP/result_${t}_mid.tif \
         $SRCDIR/${t}-04-DECONV-RGB24_EQR-RIGHT.tiff \
         $SRCDIR/${t}-05-DECONV-RGB24_EQR.tiff \
         $SRCDIR/${t}-06-DECONV-RGB24_EQR.tiff \
@@ -77,7 +80,7 @@ trap "rm $DSTDIR/.result_${t}_{top,mid,bot}.tif $DSTDIR/.result_${t}-0-25-1.jpeg
         $SRCDIR/${t}-03-DECONV-RGB24_EQR.tiff \
         $SRCDIR/${t}-04-DECONV-RGB24_EQR-LEFT.tiff
      
-     enblend-mp -w -o $DSTDIR/.result_${t}_bot.tif \
+     enblend-mp -w -o $TMP/result_${t}_bot.tif \
         $SRCDIR/${t}-20-DECONV-RGB24_EQR-RIGHT.tiff \
         $SRCDIR/${t}-21-DECONV-RGB24_EQR.tiff \
         $SRCDIR/${t}-22-DECONV-RGB24_EQR.tiff \
@@ -88,14 +91,15 @@ trap "rm $DSTDIR/.result_${t}_{top,mid,bot}.tif $DSTDIR/.result_${t}-0-25-1.jpeg
         $SRCDIR/${t}-19-DECONV-RGB24_EQR.tiff \
         $SRCDIR/${t}-20-DECONV-RGB24_EQR-LEFT.tiff
 
-     enblend-mp --wrap='vertical' -o $DSTDIR/result_${t}.tif \
-        $DSTDIR/.result_${t}_top.tif \
-        $DSTDIR/.result_${t}_mid.tif \
-        $DSTDIR/.result_${t}_bot.tif
+     enblend-mp --wrap='vertical' -o $TMP/result_${t}.tif \
+        $TMP/result_${t}_top.tif \
+        $TMP/result_${t}_mid.tif \
+        $TMP/result_${t}_bot.tif
 
-     convert $DSTDIR/result_${t}.tif -level $LEVELS -quality $QUALITY $DSTDIR/.result_${t}-0-25-1.jpeg
-     
-     mv $DSTDIR/.result_${t}-0-25-1.jpeg $DSTDIR/result_${t}-0-25-1.jpeg
+     convert $TMP/result_${t}.tif -level $LEVELS -quality $QUALITY $TMP/result_${t}-0-25-1.jpeg
+
+     mv $TMP/result_${t}.tif $DSTDIR/     
+     mv $TMP/result_${t}-0-25-1.jpeg $DSTDIR/
 
      echo $t >> $DSTDIR/stitched.txt
 

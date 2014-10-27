@@ -51,7 +51,7 @@ IMAGEJ_ELPHEL_XML="$1"
 MEM="$2"
 [ -z "$MEM" ] && MEM="7150m"
 
-DESTDIR= $(grep CORRECTION_PARAMETERS.resultsDirectory $IMAGEJ_ELPHEL_XML | sed -r -e 's/.*>([^<]+).*/\1/')
+DESTDIR=$(grep CORRECTION_PARAMETERS.resultsDirectory $IMAGEJ_ELPHEL_XML | sed -r -e 's/.*>([^<]+).*/\1/')
 BASE=$(basename $IMAGEJ_ELPHEL_XML)
 TIMESTAMP=${BASE:11:17}
 
