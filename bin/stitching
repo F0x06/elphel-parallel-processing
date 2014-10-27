@@ -205,7 +205,7 @@ assertcommands() {
     local CMD=$1
     shift
     [ -z "$(which $CMD)" ] && echo command $CMD not found >&2 && exit 1
-  done
+  done || true
 }
  
 checkdependencies() {
