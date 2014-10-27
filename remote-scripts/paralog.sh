@@ -36,8 +36,9 @@
 #      You are required to attribute the work as explained in the "Usage and
 #      Attribution" section of <http://foxel.ch/license>.
 
-QUEUE=$1
+SCRIPT="$@"
+NAME=$(basename $SCRIPT)
 HOSTNAME=$(hostname)
 while read l ; do
-  echo $(date +%F_%R:%S) $@ $PARALLEL_PID $PARALLEL_SEQ/$(wc -l $QUEUE) $HOSTNAME $l
+  echo $(date +%F_%R:%S) $NAME $PARALLEL_PID $PARALLEL_SEQ/$(wc -l $SCRIPT) $HOSTNAME $l
 done
