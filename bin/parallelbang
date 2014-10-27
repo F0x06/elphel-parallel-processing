@@ -53,15 +53,18 @@ if [ "$1" == "-f" ] ; then
 fi
 
 (
-  SUBASH_PID=$BASHPID
-  tail -n +2 $FOLLOW "$INPUT" | while read l ; do
-    if [ "$l" == "EOP" ] ; then
-      EOP=1
-      kill $SUBASH_PID
-      break
-    fi
+  FIFO=$(mktemp -u).$$
+  mkfifo $FIFO
+  tail -n +2 $FOLLOW "$INPUT" > $FIFO &
+  TAIL_PID=$!
+  
+  while read l ; do
+    [ "$l" == "EOQ" ] && break
     echo $l
-  done
+  done < $FIFO
+  
+  kill $TAIL_PID 2> /dev/null
+  rm $FIFO
   
 ) | parallel --gnu $@ $BANG_OPTIONS
 
