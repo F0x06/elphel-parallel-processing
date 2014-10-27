@@ -36,7 +36,8 @@
 #      You are required to attribute the work as explained in the "Usage and
 #      Attribution" section of <http://foxel.ch/license>.
 
+QUEUE=$1
 HOSTNAME=$(hostname)
 while read l ; do
-  echo $(date +%F_%R:%S) $@ $PARALLEL_PID $PARALLEL_SEQ $HOSTNAME $l
+  echo $(date +%F_%R:%S) $@ $PARALLEL_PID $PARALLEL_SEQ/$(wc -l $QUEUE) $HOSTNAME $l
 done

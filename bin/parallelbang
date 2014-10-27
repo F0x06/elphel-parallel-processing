@@ -48,6 +48,7 @@ shift
 BANG_OPTIONS=$(head -n 1 "$INPUT" | sed -r -e 's/.*'$(basename "$0")'(.*)/\1/')
 
 if [ "$1" == "-f" ] ; then
+  # enable queue mode 
   FOLLOW=-f
   shift
 fi

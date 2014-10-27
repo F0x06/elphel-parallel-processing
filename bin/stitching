@@ -40,57 +40,209 @@
 set -e
 
 usage() {
-     echo "Usage: $(basename $0) [ -s || --shuffle ] <Source directory> <Destination Directory> [ <Black point> <White point> <Quality> <Output_file> ]"
-     exit $1
+
+  if [ "$1" == "-h" ] ; then
+    echo "$(basename $0) [-h|--help] [OPTION...] <sourceDir>  <destDir> [ -o <script> ]"
+    exit 1
+  fi
+
+  cat | less << EOF 
+SYNOPSIS:
+
+    $(basename $0) [OPTION...] <sourceDir>  <destDir> [ -o <script> ]
+
+DESCRIPTION:
+
+    Generate a script to process unprocessed files from <sourceDir> and place
+    the resulting files in <destDir>, using GNU parallel. 
+
+CONSTRAINTS:
+
+    You must specify GNU parallel options after the output script name, or
+    they can be specified in the PARALLEL environement variable.
+
+QUEUE MODE:
+
+    If no output script name, or option --run is set, the processing is started
+    immediately (before the full list of timestamps is built), using the output
+    script as a queue, until "EOQ" is queued
+
+RESUME PROCESSING:
+
+    To resume processing, run the output script again.
+
+OPTIONS SUMMARY:
+    -h,--help                   display this
+    -s,--shuffle                process progressively instead of sequentially
+    -q,--quality <quality>      set jpeg quality
+    -o,--output <script>        set output script name
+    -r,--run                    start processing immediately in queue mode
+    -b,--black <black point>    set black point
+    -w,--white <white point>    set white point
+    -l,--logdir <path>          set log directory
+
+EOF
+  exit 1
 }
 
-if [ "$1" == "-s" -o "$1" == "--shufffle" ] ; then
-  SHUFFLE=true
-  shift
-fi
+init() {
 
-[ $# -lt 2 -o $# -gt 6 ] && usage 1
-[ "$1" = "-h" ] && usage 0
+  checkdependencies
 
-SRCDIR="$1"
-DSTDIR="$2"
-BLACKPOINT="$3"
-WHITEPOINT="$4"
-QUALITY="$5"
-OUTPUT="$6"
+  [ $# -lt 1 ] && usage -h
 
-[ -z "$QUALITY" ] && QUALITY=98
-[ -z "$BLACKPOINT" ] && BLACKPOINT=0
-[ -z "$WHITEPOINT" ] && WHITEPOINT=100
+  # parse command line options
+  if ! options=$(getopt -o hsrflb:w:q:o: -l help,shuffle,black:,white:,quality:,run,filelist:,logdir:,output: -- "$@")
+  then
+      # something went wrong, getopt will put out an error message for us
+      exit 1
+  fi
+
+  set -- $options
+
+  while [ $# -gt 0 ] ; do
+      case $1 in
+      -h|--help) usage $1 ;;
+      -s|--shuffle) shuffle="yes" ;;
+      -b|--black) BLACKPOINT=$2 ; shift ;;
+      -w|--white) WHITEPOINT=$2 ; shift ;;
+      -q|--quality) QUALITY=$2 ; shift ;;
+      -r|--run) RUN=yes ;;
+      -f|--filelist) FILELIST=$2 ; shift ;;
+      -l|--logdir) LOGDIR=$2 ; shift ;;
+      (--) shift; break;;
+      (-*) echo "$(basename $0): error - unrecognized option $1" 1>&2; exit 1;;
+      (*) break;;
+      esac
+      shift
+  done
+
+  [ $# -lt 2 ] && usage -h
+
+  SRCDIR=$(realpath "$1")
+  DSTDIR=$(realpath "$2")
+
+  cd $HOME 
+
+  # default values
+  [ -z "$QUALITY" ] && QUALITY=98
+  [ -z "$BLACKPOINT" ] && BLACKPOINT=0
+  [ -z "$WHITEPOINT" ] && WHITEPOINT=100
+
+  # current timestamp
+  NOW=$(date +%s) # _%N
+
+  # default output script name
+  if [ -z "$OUTPUT" ] ; then
+    OUTPUT="stitching-$NOW"
+    RUN=true
+  fi
+
+  # set and create directories
+  [ -z "$LOGDIR" ] && LOGDIR=log/stitching
+  mkdir -p $LOGDIR
+  mkdir -p $DSTDIR
+
+  # set remote script path
+  if [ -z "$REMOTESCRIPT" ] ; then
+    REMOTESCRIPT=$(which stitch.sh)
+    REMOTESCRIPT=${REMOTESCRIPT#$HOME/}
+  fi
+
+  [ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=bin/stitch.sh
+
+  # set remote logger path
+  if [ -z "$REMOTELOGGER" ] ; then
+    REMOTELOGGER=$(which paralog.sh)
+    REMOTELOGGER=${REMOTELOGGER#$HOME/}
+  fi
+
+  [ -z "$REMOTELOGGER" ] && REMOTELOGGER=bin/paralog.sh
+
+  # set parallelbang path
+  if [ -z "$PBANG" ] ; then
+    PBANG=$(which parallelbang)
+    PBANG=${PBANG#$HOME/}
+  fi
+
+  [ -z "$PBANG" ] && PBANG=bin/parallelbang
+
+}
+
+main() {
+
+  init $@
+
+  echo "#!$PBANG --gnu -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
+
+  chmod +x "$OUTPUT"
 
 
-# current timestamp
-NOW=$(date +%s) # _%N
+  if [ "$RUN" == "true" -o "$RUN" == "yes" ] ; then
+    # run in queue mode
+    echo "#### running $OUTPUT" 1>&2
+    doit | tee -a "$OUTPUT" | parallel --gnu -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \| $REMOTELOGGER $(basename $OUTPUT)
 
-getfilelist() {
+  else
+    # or generate output script
+    doit | tee -a "$OUTPUT"
+
+  fi
+
+  echo "#### saved as $OUTPUT" 1>&2
+
+}
+
+
+listUnprocessedTimestamps() {
+  listTimestamps | while read TIMESTAMP ; do
+    [ -s "$DSTDIR/result_${TIMESTAMP}-0-25-1.jpeg" ] || echo $TIMESTAMP
+  done
+}
+
+assertcommands() {
+  while [ $# -ne 0 ] ; do
+    local CMD=$1
+    shift
+    [ -z "$(which $CMD)" ] && echo command $CMD not found >&2 && exit 1
+  done
+}
+ 
+checkdependencies() {
+  assertcommands realpath parallel ssh
+}
+ 
+# return the list of timestamps to process
+listTimestamps() {
+
+  # build tiff list if not passed as parameter
   if [ -z "$FILELIST" ] ; then
     FILELIST="/tmp/filelist_stitch_$NOW.tmp"
     find "$SRCDIR" -maxdepth 2 -name \*.tiff > $FILELIST
   else
     echo "Using files listed in $FILELIST" 1>&2
   fi
+
+  # output shuffled or sorted timestamp list
   if [ -n "$SHUFFLE" ] ; then
     shuffile
   else
-    cat "$FILELIST" | getTimestamps
+    cat "$FILELIST" | tiffListToTimestampList
   fi
 }
 
-getTimestamps() {
+# read tiff list from stdin, return sorted timestamp list
+tiffListToTimestampList() {
   while read TIFF ; do
     TIFF=$(basename $TIFF)
     echo ${TIFF:0:17}
   done | sort -u 
 }
 
-# list timestamps sequentially with step=length/2, then recursively each time with step/=2
+# return shuffled (progressive) timestamp list,
+# reducing the step by half recursively
 shuffile() {
-  argv=($(cat "$FILELIST" | getTimestamps))
+  argv=($(cat "$FILELIST" | tiffListToTimestampList))
   argc=${#argv[*]}
   last=$((argc - 1))
   [ $last -eq 0 ] && last=1
@@ -112,58 +264,4 @@ shuffile() {
   done
 }
 
-NOW=$(date +%s) # _%N
-
-if [ -z "$OUTPUT" ] ; then
-  OUTPUT="stitching-$NOW"
-  RUN=true
-fi
-
-[ -z "$LOGDIR" ] && LOGDIR=log/stitching
-mkdir -p $LOGDIR
-
-mkdir -p $DSTDIR
-
-if [ -z "$REMOTESCRIPT" ] ; then
-  REMOTESCRIPT=$(which stitch.sh)
-  REMOTESCRIPT=${REMOTESCRIPT#$HOME/}
-fi
-
-[ -z "$REMOTESCRIPT" ] && REMOTESCRIPT=bin/stitch.sh
-
-if [ -z "$REMOTELOGGER" ] ; then
-  REMOTELOGGER=$(which paralog.sh)
-  REMOTELOGGER=${REMOTELOGGER#$HOME/}
-fi
-
-[ -z "$REMOTELOGGER" ] && REMOTELOGGER=bin/paralog.sh
-
-if [ -z "$PBANG" ] ; then
-  PBANG=$(which parallelbang)
-  PBANG=${PBANG#$HOME/}
-fi
-
-[ -z "$PBANG" ] && PBANG=bin/parallelbang
-
-mkdir -p ~/.parallel
-[ -f ~/.parallel/sshloginfile ] || touch ~/.parallel/sshloginfile
-
-echo "#!$PBANG --gnu -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
-
-chmod +x "$OUTPUT"
-
-doit() {
-  getfilelist | while read TIMESTAMP ; do
-    [ -s "$DSTDIR/result_${TIMESTAMP}-0-25-1.jpeg" ] || echo $TIMESTAMP
-  done
-}
-
-if [ "$RUN" == "true" -o "$RUN" == "yes" ] ; then
-  echo "#### running $OUTPUT" 1>&2
-  doit | tee -a "$OUTPUT" | parallel --gnu -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \| $REMOTELOGGER $(basename $OUTPUT)
-else
-  doit | tee -a "$OUTPUT"
-fi
-
-echo "#### saved as $OUTPUT" 1>&2
-
+main $@
