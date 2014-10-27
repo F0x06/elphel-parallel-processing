@@ -40,7 +40,7 @@ set -e
 
 #set -x
 
-FIJI=ImageJ-linux64
+[ -z "$FIJI" ] && FIJI=ImageJ-linux64
 
 if [ $# -lt 1 ] ; then
   echo "usage: $(basename $0) <eyesis_correction_xml> [ <memory> ]"
