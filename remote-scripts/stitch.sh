@@ -48,12 +48,12 @@ TIMESTAMP=$3
 
 t=$TIMESTAMP
 
+[ -f $DSTDIR/result_${t}-0-25-1.jpeg ] && exit 0
+
 TMP=$(mktemp -u --tmpdir=/dev/shm).stitch.$$
 mkdir -p $TMP || exit
 
 trap "rm -r $TMPDIR 2>/dev/null" EXIT SIGINT SIGTERM
-
-[ -f $DSTDIR/result_${t}-0-25-1.jpeg ] && exit 0
 
 {
      set -e
@@ -96,6 +96,8 @@ trap "rm -r $TMPDIR 2>/dev/null" EXIT SIGINT SIGTERM
         $TMP/result_${t}_mid.tif \
         $TMP/result_${t}_bot.tif
 
+     rm $TMP/result_${t}_{top,mid,bot}.tif
+
      convert $TMP/result_${t}.tif -level $LEVELS -quality $QUALITY $TMP/result_${t}-0-25-1.jpeg
 
      mv $TMP/result_${t}.tif $DSTDIR/     
@@ -105,3 +107,4 @@ trap "rm -r $TMPDIR 2>/dev/null" EXIT SIGINT SIGTERM
 
 } 2>&1
 
+rm -r $TMPDIR 2>/dev/null
