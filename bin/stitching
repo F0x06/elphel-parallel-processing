@@ -59,7 +59,7 @@ DESCRIPTION:
 CONSTRAINTS:
 
     You must specify GNU parallel options after the output script name, or
-    they can be specified in the PARALLEL environement variable.
+    they can be specified in the PARALLEL environment variable.
 
 QUEUE MODE:
 
@@ -74,12 +74,14 @@ RESUME PROCESSING:
 OPTIONS SUMMARY:
     -h,--help                   display this
     -s,--shuffle                process progressively instead of sequentially
-    -q,--quality <quality>      set jpeg quality
     -o,--output <script>        set output script name
     -r,--run                    start processing immediately in queue mode
+    -p,--parallel <options>     when -r is specified, set gnu parallel options
+    -l,--logdir <path>          set log directory
+
     -b,--black <black point>    set black point
     -w,--white <white point>    set white point
-    -l,--logdir <path>          set log directory
+    -q,--quality <quality>      set jpeg quality
 
 EOF
   exit 1
@@ -110,9 +112,10 @@ init() {
       -r|--run) RUN=yes ;;
       -f|--filelist) FILELIST=$2 ; shift ;;
       -l|--logdir) LOGDIR=$2 ; shift ;;
-      (--) shift; break;;
-      (-*) echo "$(basename $0): error - unrecognized option $1" 1>&2; exit 1;;
-      (*) break;;
+      -p|--paralell) export PARALLEL=$2 ; shift ;;
+      (--) shift; break ;;
+      (-*) echo "$(basename $0): error - unrecognized option $1" 1>&2; exit 1 ;;
+      (*) break ;;
       esac
       shift
   done
@@ -173,10 +176,8 @@ main() {
 
   init $@
 
-  echo "#!$PBANG --gnu -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
-
+  echo "#!$PBANG --gnu -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \\\\\\\\| $REMOTELOGGER $OUTPUT" | tee "$OUTPUT"
   chmod +x "$OUTPUT"
-
 
   if [ "$RUN" == "true" -o "$RUN" == "yes" ] ; then
     # run in queue mode
@@ -192,7 +193,6 @@ main() {
   echo "#### saved as $OUTPUT" 1>&2
 
 }
-
 
 listUnprocessedTimestamps() {
   listTimestamps | while read TIMESTAMP ; do
