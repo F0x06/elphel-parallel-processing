@@ -47,7 +47,7 @@ checkeqrcount() {
     # find is too slow, use test instead
     test -e $DESTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR.tiff && ((++EQRCOUNT))
     test -e $DESTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR-LEFT.tiff && ((++HALFEQRCOUNT))
-    test -e $DESTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR-RIGHT && ((++HALFEQRCOUNT))
+    test -e $DESTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR-RIGHT.tiff && ((++HALFEQRCOUNT))
   done
   test $((EQRCOUNT+HALFEQRCOUNT/2)) == $SUBCAMERAS
 }
