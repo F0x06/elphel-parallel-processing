@@ -38,7 +38,21 @@
 
 set -e
 
-#set -x
+# check whether timestamp already processed
+checkeqrcount() {
+  EQRCOUNT=0
+  HALFEQRCOUNT=0
+  for ((i=0; i<$SUBCAMERAS; ++i)) ; do
+    CHAN=$(printf %02d $i)
+    # find is too slow, use test instead
+    test -e $DESTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR.tiff && ((++EQRCOUNT))
+    test -e $DESTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR-LEFT.tiff && ((++HALFEQRCOUNT))
+    test -e $DESTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR-RIGHT && ((++HALFEQRCOUNT))
+  done
+  test $((EQRCOUNT+HALFEQRCOUNT/2)) == $SUBCAMERAS
+}
+
+[ -n "$DEBUG" ] && set -x
 
 [ -z "$FIJI" ] && FIJI=ImageJ-linux64
 
@@ -55,8 +69,23 @@ DESTDIR=$(grep CORRECTION_PARAMETERS.resultsDirectory $IMAGEJ_ELPHEL_XML | sed -
 BASE=$(basename $IMAGEJ_ELPHEL_XML)
 TIMESTAMP=${BASE:11:17}
 
-# assume there's only 9 jp4 in the xml and timestamp is TIMESTAMP
-[ $(find $DESTDIR -name $TIMESTAMP\*.tiff | wc -l) -lt 29 ] || exit 0
+# TODO: add it in post_processing generated shebang, from XML property CAMERAS.channelMap.length
+SUBCAMERAS=$(grep CAMERAS.channelMap.length $IMAGEJ_ELPHEL_XML | sed -r -e 's/.*>([^<]+).*/\1/')
 
-exec $FIJI --headless --allow-multiple --mem $MEM --run Eyesis_Correction prefs=$IMAGEJ_ELPHEL_XML 2>&1
+# assume there's only 1 timestamp in the XML
+echo check whether $TIMESTAMP is already processed
+if checkeqrcount ; then
+  echo already processed: $TIMESTAMP
+  exit 0
+fi
 
+echo process $TIMESTAMP
+$FIJI --headless --allow-multiple --mem $MEM --run Eyesis_Correction prefs=$IMAGEJ_ELPHEL_XML 2>&1
+
+echo check whether $TIMESTAMP has been thoroughly processed
+if ! checkeqrcount ; then
+  echo ERROR: $((EQRCOUNT+HALFEQRCOUNT/2))/$SUBCAMERAS channels have been processed for $TIMESTAMP
+  exit 240
+fi
+
+echo done
