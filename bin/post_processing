@@ -82,7 +82,11 @@ getTimestamps() {
       echo ${JP4:0:17}
     done | sort -u | while read timestamp ; do
       # echo timestamp only if theres not yet 29 files with it
-      [ $(find "$DSTDIR" -name $timestamp\*EQR.tiff 2>/dev/null | wc -l) -ne 29 ] && echo $timestamp
+      if [ -z "$DSTDIRLIST" ] ; then
+        export DSTDIRLIST=$(mktemp -u --tmpdir=/dev/shm)
+        find  "$DSTDIR" -name \*EQR\*.tiff > $DSTDIRLIST
+      fi
+      [ $(grep -E -e $timestamp $DSTDIRLIST 2>/dev/null | wc -l) -ne 29 ] && echo $timestamp
     done
 }
 
@@ -170,7 +174,7 @@ fi
 [ -z "$PBANG" ] && PBANG=bin/parallelbang
 
 # generate hashbang
-echo "#!$PBANG --gnu -I _XML_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \\\\\\\\| $REMOTELOGGER $(basename $OUTPUT)" | tee "$OUTPUT"
+echo "#!$PBANG --gnu -I _XML_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \\\\\\\\| $REMOTELOGGER $OUTPUT" | tee "$OUTPUT"
 chmod +x "$OUTPUT"
 
 # Generate and list imagej-elphel xml files
@@ -201,7 +205,7 @@ doit() {
 # (if not set manually ,RUN will is set to true when <output_script> is ommited)
 if [ "$RUN" = "true" -o "$RUN" = yes ] ; then
   echo "#### running $OUTPUT" 1>&2
-  doit | tee -a "$OUTPUT" | parallel --gnu -I _XML_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \| $REMOTELOGGER $(basename $OUTPUT)
+  doit | tee -a "$OUTPUT" | parallel --gnu -I _XML_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \| $REMOTELOGGER $OUTPUT
 else
   doit | tee -a "$OUTPUT"
 fi
