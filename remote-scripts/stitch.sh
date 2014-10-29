@@ -50,10 +50,10 @@ t=$TIMESTAMP
 
 [ -f $DSTDIR/result_${t}-0-25-1.jpeg ] && exit 0
 
-TMP=$(mktemp -u --tmpdir=/dev/shm).stitch.$$
+TMP=$(mktemp -u --tmpdir=/dev/shm).stitch
 mkdir -p $TMP || exit
 
-trap "rm -r $TMPDIR 2>/dev/null" EXIT SIGINT SIGTERM
+trap "rm -r $TMP 2>/dev/null" EXIT SIGINT SIGTERM
 
 {
      set -e
@@ -107,4 +107,4 @@ trap "rm -r $TMPDIR 2>/dev/null" EXIT SIGINT SIGTERM
 
 } 2>&1
 
-rm -r $TMPDIR 2>/dev/null
+rm -r $TMP 2>/dev/null
