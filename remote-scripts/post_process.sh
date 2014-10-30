@@ -88,4 +88,4 @@ if ! checkeqrcount ; then
   exit 240
 fi
 
-echo done
+echo successfully processed $TIMESTAMP
