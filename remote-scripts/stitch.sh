@@ -97,6 +97,9 @@ SRCDIR=$1
 DSTDIR=$2
 TIMESTAMP=$3
 
+# check whether timestamp is already processed
+[ -f $DSTDIR/result_${TIMESTAMP}.tif ] && exit 0
+
 # default values
 [ -z "$QUALITY" ] && QUALITY=98
 [ -z "$GAMMA" ] && GAMMA=1
@@ -118,7 +121,6 @@ trap "rm -r $TMP 2>/dev/null" EXIT SIGINT SIGTERM
 
 case $METHOD in
 multiblend)
-     [ -f $DSTDIR/result_${t}_multiblend.tif ] && exit 0
 {
      set -e
      multiblend --wideblend --nocrop -o $TMP/result_${t}.tif \
@@ -152,10 +154,10 @@ multiblend)
 
      if [ -z "$NOJPEG" ] ; then
        convert $TMP/result_${t}.tif -level $LEVELS -quality $QUALITY $TMP/result_${t}-0-25-1.jpeg
-       mv $TMP/result_${t}-0-25-1.jpeg $DSTDIR/result_${t}-0-25-1_multiblend.jpeg
+       mv $TMP/result_${t}-0-25-1.jpeg $DSTDIR/result_${t}-0-25-1.jpeg
      fi
 
-     mv $TMP/result_${t}.tif $DSTDIR/result_${t}_multiblend.tif
+     mv $TMP/result_${t}.tif $DSTDIR/result_${t}.tif
 
      echo $t >> $DSTDIR/stitched.txt
 
