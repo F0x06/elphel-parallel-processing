@@ -72,16 +72,17 @@ RESUME PROCESSING:
     To resume processing, run the output script again.
 
 OPTIONS SUMMARY:
-    -h,--help                   display this
-    -s,--shuffle                process progressively instead of sequentially
-    -o,--output <script>        set output script name
-    -r,--run                    start processing immediately in queue mode
-    -p,--parallel <options>     when -r is specified, set gnu parallel options
-    -l,--logdir <path>          set log directory
+    -h,--help                      display this
+    -s,--shuffle                   process progressively instead of sequentially
+    -o,--output <script>           set output script name
+    -r,--run                       start processing immediately in queue mode
+    -p,--parallel <options>        when -r is specified, set gnu parallel options
+    -l,--logdir <path>             set log directory
 
-    -b,--black <black point>    set black point
-    -w,--white <white point>    set white point
-    -q,--quality <quality>      set jpeg quality
+    -m,--method enblend|multiblend set stitching method
+    -b,--black <black point>       set black point
+    -w,--white <white point>       set white point
+    -q,--quality <quality>         set jpeg quality
 
 EOF
   exit 1
@@ -131,6 +132,7 @@ init() {
   [ -z "$QUALITY" ] && QUALITY=98
   [ -z "$BLACKPOINT" ] && BLACKPOINT=0
   [ -z "$WHITEPOINT" ] && WHITEPOINT=100
+  [ -z "$METHOD" ] && METHOD=enblend
 
   # current timestamp
   NOW=$(date +%s) # _%N
@@ -176,13 +178,13 @@ main() {
 
   init $@
 
-  echo "#!$PBANG --gnu -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \\\\\\\\| $REMOTELOGGER $OUTPUT" | tee "$OUTPUT"
+  echo "#!$PBANG --gnu -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ -q $QUALITY -b ${BLACKPOINT} -w ${WHITEPOINT} -m ${METHOD} \\\\\\\\| $REMOTELOGGER $OUTPUT" | tee "$OUTPUT"
   chmod +x "$OUTPUT"
 
   if [ "$RUN" == "true" -o "$RUN" == "yes" ] ; then
     # run in queue mode
     echo "#### running $OUTPUT" 1>&2
-    doit | tee -a "$OUTPUT" | parallel --gnu -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ $QUALITY ${BLACKPOINT}%,${WHITEPOINT}%,1 \| $REMOTELOGGER $OUTPUT
+    doit | tee -a "$OUTPUT" | parallel --gnu -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ -q $QUALITY -b ${BLACKPOINT} -w ${WHITEPOINT} -m ${METHOD} \| $REMOTELOGGER $OUTPUT
 
   else
     # or generate output script
