@@ -95,13 +95,13 @@ init() {
   [ $# -lt 1 ] && usage -h
 
   # parse command line options
-  if ! options=$(getopt -o hsrflb:w:q:o: -l help,shuffle,black:,white:,quality:,run,filelist:,logdir:,output: -- "$@")
+  if ! options=$(getopt -o hsrflb:w:q:o:p:m: -l help,shuffle,black:,white:,quality:,run,filelist:,logdir:,output:,parallel:method: -- "$@")
   then
       # something went wrong, getopt will put out an error message for us
       exit 1
   fi
 
-  set -- $options
+  eval set -- "$options"
 
   while [ $# -gt 0 ] ; do
       case $1 in
@@ -113,7 +113,9 @@ init() {
       -r|--run) RUN=yes ;;
       -f|--filelist) FILELIST=$2 ; shift ;;
       -l|--logdir) LOGDIR=$2 ; shift ;;
-      -p|--paralell) export PARALLEL=$2 ; shift ;;
+      -p|--paralell) export PARALLEL="$2" ; shift ;;
+      -m|--method)  METHOD=$2 ; shift ;;
+      -o|--output) OUTPUT=$2 ; shift ;;
       (--) shift; break ;;
       (-*) echo "$(basename $0): error - unrecognized option $1" 1>&2; exit 1 ;;
       (*) break ;;
@@ -172,11 +174,13 @@ init() {
 
   [ -z "$PBANG" ] && PBANG=bin/parallelbang
 
+  return 0
+
 }
 
 main() {
 
-  init $@
+  init "$@"
 
   echo "#!$PBANG --gnu -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ -q $QUALITY -b ${BLACKPOINT} -w ${WHITEPOINT} -m ${METHOD} \\\\\\\\| $REMOTELOGGER $OUTPUT" | tee "$OUTPUT"
   chmod +x "$OUTPUT"
@@ -184,11 +188,11 @@ main() {
   if [ "$RUN" == "true" -o "$RUN" == "yes" ] ; then
     # run in queue mode
     echo "#### running $OUTPUT" 1>&2
-    doit | tee -a "$OUTPUT" | parallel --gnu -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ -q $QUALITY -b ${BLACKPOINT} -w ${WHITEPOINT} -m ${METHOD} \| $REMOTELOGGER $OUTPUT
+    listUnprocessedTimestamps | tee -a "$OUTPUT" | parallel --gnu -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ -q $QUALITY -b ${BLACKPOINT} -w ${WHITEPOINT} -m ${METHOD} \| $REMOTELOGGER $OUTPUT
 
   else
     # or generate output script
-    doit | tee -a "$OUTPUT"
+    listUnprocessedTimestamps | tee -a "$OUTPUT"
 
   fi
 
@@ -266,4 +270,4 @@ shuffile() {
   done
 }
 
-main $@
+main "$@"
