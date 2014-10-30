@@ -118,7 +118,7 @@ init() {
   while [ $# -gt 0 ] ; do
       case $1 in
       -h|--help) usage $1 ;;
-      -s|--shuffle) shuffle="yes" ;;
+      -s|--shuffle) SHUFFLE="yes" ;;
       -o|--output) OUTPUT=$2 ; shift ;;
       -r|--run) RUN=yes ;;
       -p|--parallel) export PARALLEL=$2 ; shift ;;
