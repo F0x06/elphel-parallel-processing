@@ -107,13 +107,13 @@ init() {
   [ $# -lt 1 ] && usage -h
                                                                                                                                                                                                                    
   # parse command line options
-  if ! options=$(getopt -o hso:rp:l:x:m:M:f: -l help,shuffle,output:,run,parallel:,logdir,xml,mem,folder-max,filelist -- "$@")
+  if ! options=$(getopt -o hso:rp:l:x:m:M:f:tS: -l help,shuffle,output:,run,parallel:,logdir,xml,mem,folder-max,filelist:,truncate,split-at: -- "$@")
   then
       # something went wrong, getopt will put out an error message for us
       exit 1
   fi
  
-  set -- $options
+  eval set -- "$options"
  
   while [ $# -gt 0 ] ; do
       case $1 in
@@ -128,7 +128,7 @@ init() {
       -M|--folder-max) FOLDER_MAX=$2 ; shift ;;
       -f|--filelist) FILELIST=$2 ; shift ;;
       -S|--split-at) SPLITAT=$2 ; shift ;;
-      -t|--truncate) TRUNCATE=$2 ; shift ;;
+      -t|--truncate) TRUNCATE=yes ;;
       (--) shift; break;;
       (-*) echo "$(basename $0): error - unrecognized option $1" 1>&2; exit 1;;
       (*) break;;
@@ -190,7 +190,7 @@ init() {
 
 main() {
    
-  init $@
+  init "$@"
    
   # generate hashbang
   echo "#!$PBANG --gnu -I _XML_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \\\\\\\\| $REMOTELOGGER $OUTPUT" | tee "$OUTPUT"
@@ -316,4 +316,4 @@ doit() {
   fi
 }
 
-main $@
+main "$@"

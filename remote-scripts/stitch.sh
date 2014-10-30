@@ -73,7 +73,7 @@ then
     exit 1
 fi
  
-set -- $options
+eval set -- "$options"
  
 while [ $# -gt 0 ] ; do
     case $1 in
