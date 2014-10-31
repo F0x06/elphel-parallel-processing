@@ -46,7 +46,7 @@ usage() {
     exit 1
   fi
 
-  cat | less -F  << EOF 
+  cat >&2 << EOF
 
 SYNOPSIS:
 
@@ -55,7 +55,7 @@ SYNOPSIS:
 DESCRIPTION:
 
     Generate a script to process unprocessed files from <sourceDir> and place
-    the resulting files in <destDir>, using GNU parallel. 
+    the resulting files in <destDir>, using GNU parallel.
 
 CONSTRAINTS:
 
@@ -132,7 +132,7 @@ init() {
 
   assertenv SRCDIR DSTDIR
 
-  cd $HOME 
+  cd $HOME
 
   # default values
   [ -z "$QUALITY" ] && QUALITY=98
@@ -217,11 +217,11 @@ assertcommands() {
     [ -z "$(which $CMD)" ] && echo command $CMD not found >&2 && exit 1
   done || true
 }
- 
+
 checkdependencies() {
   assertcommands realpath parallel ssh
 }
- 
+
 # return the list of timestamps to process
 listTimestamps() {
 
@@ -246,7 +246,7 @@ tiffListToTimestampList() {
   while read TIFF ; do
     TIFF=$(basename $TIFF)
     echo ${TIFF:0:17}
-  done | sort -u 
+  done | sort -u
 }
 
 # return shuffled (progressive) timestamp list,
@@ -279,7 +279,7 @@ assertenv() {
   for name in $@ ; do
     if [ -z "$(printenv $name)" ] ; then
       echo error: $name is not set ! >&2
-      usage                                                                                                           
+      usage
     fi
   done
 }

@@ -46,7 +46,7 @@ usage() {
     exit 1
   fi
 
-  cat  | less -F << EOF
+  cat >&2  << EOF
 
 SYNOPSIS:
 
@@ -73,6 +73,7 @@ RESUME PROCESSING:
     To resume processing, run the output script again.
 
 OPTIONS SUMMARY:
+
     -h,--help                   display this
     -s,--shuffle                process progressively instead of sequentially
     -o,--output <script>        set output script name
