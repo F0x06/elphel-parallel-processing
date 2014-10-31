@@ -234,6 +234,11 @@ getTimestamps() {
   done |
   sort -u |
   while read timestamp ; do
+    # echo timestamp only if theres not yet 29 files with it
+    if [ -z "$DSTDIRLIST" ] ; then
+      export DSTDIRLIST=$(mktemp -u --tmpdir=/dev/shm)
+      find  "$DSTDIR" -name \*EQR\*.tiff > $DSTDIRLIST
+    fi                                                                                                                                                                                                           
     checkeqrcount $timestamp && echo $timestamp
   done
 }
@@ -316,14 +321,14 @@ doit() {
 
 # check whether timestamp already processed
 checkeqrcount() {
+  TIMESTAMP=$1
   EQRCOUNT=0
   HALFEQRCOUNT=0
   for ((i=0; i<$SUBCAMERACOUNT; ++i)) ; do
     CHAN=$(printf %02d $i)
-    # find is too slow, use test instead
-    test -e $DSTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR.tiff && ((++EQRCOUNT)) && continue
-    test -e $DSTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR-LEFT.tiff &&
-    test -e $DSTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR-RIGHT.tiff && ((++EQRCOUNT))
+    grep -q ${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR.tiff $DSTDIRLIST && ((++EQRCOUNT)) && continue
+    grep -q $DSTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR-LEFT.tiff $DSTDIRLIST &&
+    grep -q $DSTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR-RIGHT.tiff $DSTDIRLIST && ((++EQRCOUNT))
   done
   test $EQRCOUNT == $SUBCAMERACOUNT
 }
