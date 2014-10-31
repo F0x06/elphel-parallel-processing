@@ -46,7 +46,8 @@ usage() {
     exit 1
   fi
 
-  cat | less << EOF 
+  cat  | less -F << EOF
+
 SYNOPSIS:
 
     $(basename $0) [OPTION...] <sourceDir>  <destDir> [ -o <script> ]
@@ -54,7 +55,7 @@ SYNOPSIS:
 DESCRIPTION:
 
     Generate a script to process unprocessed files from <sourceDir> and place
-    the resulting files in <destDir>, using GNU parallel. 
+    the resulting files in <destDir>, using GNU parallel.
 
 CONSTRAINTS:
 
@@ -78,43 +79,37 @@ OPTIONS SUMMARY:
     -r,--run                    start processing immediately in queue mode
     -p,--parallel <options>     when -r is specified, set gnu parallel options
     -l,--logdir <path>          set log directory
+    -f,--filelist <file_list>   files to process. <sourceDir> will be ignored
 
     -x,--xml <path>             imagej-elphel xml preferences path
     -m,--mem <memory>           memory to allocate for ImageJ
-    -S,--split-at <count>       Split configuration files. Default is 9
-    -t,--truncate               eg if split == 8 and you dont want the
-                                9th channel in the next xml
+    -S,--split-at <count>       number of jp4 per XML Default is one timestamp
+    -t,--truncate               eg if split == 8 and you dont want the 9th jp4
+                                to be put in the next xml
     -M,--folder-max             maximum number of files per output directory
+
 EOF
   exit 1
-  echo "Usage: $(basename $0) [ -s | --shuffle ] <eyesis_correction_xml> <source_dir> [ <results_dir>  <output_script> <split_at> <truncate> ]"
-  echo
-  echo "- When no output file is specified, parallel is run immediately"
-  echo "- Paths for corrxml can be specified as environment variables"
-  echo "- IMAGEJMEM, REMOTELOGGER, FILELIST, LOGDIR, REMOTESCRIPT too"
-  echo "- <split_at> defaults to 9. When you want only the 8 first channels"
-  echo "  per timestamp then set <split_at> to 8 and <truncate> to true"
-  echo "- use --shuffle to process timestamps by half steps"
-  echo
-  exit 1
+#  Paths for corrxml can be specified as environment variables
+#  eg REMOTELOGGER, REMOTESCRIPT
 
 } # usage
 
 init() {
- 
+
   checkdependencies
- 
+
   [ $# -lt 1 ] && usage -h
-                                                                                                                                                                                                                   
+
   # parse command line options
   if ! options=$(getopt -o hso:rp:l:x:m:M:f:tS: -l help,shuffle,output:,run,parallel:,logdir,xml,mem,folder-max,filelist:,truncate,split-at: -- "$@")
   then
       # something went wrong, getopt will put out an error message for us
       exit 1
   fi
- 
+
   eval set -- "$options"
- 
+
   while [ $# -gt 0 ] ; do
       case $1 in
       -h|--help) usage $1 ;;
@@ -123,7 +118,7 @@ init() {
       -r|--run) RUN=yes ;;
       -p|--parallel) export PARALLEL=$2 ; shift ;;
       -l|--logdir) LOGDIR=$2 ; shift ;;
-      -x|--xml) XML=$2 ; shift ;;
+      -x|--xml) IMAGEJ_ELPHEL_XML=$2 ; shift ;;
       -m|--mem) IMAGEJMEM=$2 ; shift ;;
       -M|--folder-max) FOLDER_MAX=$2 ; shift ;;
       -f|--filelist) FILELIST=$2 ; shift ;;
@@ -135,14 +130,20 @@ init() {
       esac
       shift
   done
- 
-  [ $# -lt 2 ] && usage -h
- 
+
+  [ $# -ne 2 ] && usage -h
+
+  # positional parameters
   SRCDIR=$(realpath "$1")
   DSTDIR=$(realpath "$2")
-  
+
+  assertenv IMAGEJ_ELPHEL_XML SRCDIR DSTDIR
+
+  SUBCAMERACOUNT=$(grep CAMERAS.channelMap.length $IMAGEJ_ELPHEL_XML | sed -r -e 's/.*>([^<]+).*/\1/')
+  CAMERACOUNT=$(grep CAMERAS.cameraIPs.length $IMAGEJ_ELPHEL_XML | sed -r -e 's/.*>([^<]+).*/\1/')
+
   # default values
-  [ -z "$SPLITAT" ] && SPLITAT=9  # channels per job (xml)
+  [ -z "$SPLITAT" ] && SPLITAT=$CAMERACOUNT  # JP4 to process per job (xml)
   [ -z "$IMAGEJMEM" ] && IMAGEJMEM=7150m
   [ -z "$FOLDER_MAX" ] && FOLDER_MAX=90000
 
@@ -186,30 +187,31 @@ init() {
   [ -z "$PBANG" ] && PBANG=bin/parallelbang
 
   cd $HOME
+
 }
 
 main() {
-   
+
   init "$@"
-   
+
   # generate hashbang
   echo "#!$PBANG --gnu -I _XML_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \\\\\\\\| $REMOTELOGGER $OUTPUT" | tee "$OUTPUT"
   chmod +x "$OUTPUT"
- 
+
   if [ "$RUN" == "true" -o "$RUN" == "yes" ] ; then
     # run in queue mode
     echo "#### running $OUTPUT" 1>&2
     doit | tee -a "$OUTPUT" | parallel --gnu -I _XML_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \| $REMOTELOGGER $OUTPUT
-   
+
   else
     # or generate output script
     doit | tee -a "$OUTPUT"
-   
+
   fi
-   
+
   echo "#### saved as $OUTPUT" 1>&2
-   
-}  
+
+}
 
 assertcommands() {
   while [ $# -ne 0 ] ; do
@@ -218,11 +220,11 @@ assertcommands() {
     [ -z "$(which $CMD)" ] && echo command $CMD not found >&2 && exit 1
   done || true
 }
- 
+
 checkdependencies() {
   assertcommands realpath parallel ssh
 }
- 
+
 getTimestamps() {
   while read JP4 ; do
     # extract timestamps
@@ -231,16 +233,11 @@ getTimestamps() {
   done |
   sort -u |
   while read timestamp ; do
-    # echo timestamp only if theres not yet 29 files with it
-    if [ -z "$DSTDIRLIST" ] ; then
-      export DSTDIRLIST=$(mktemp -u --tmpdir=/dev/shm)
-      find  "$DSTDIR" -name \*EQR.tiff > $DSTDIRLIST
-    fi                                                                                                                                                                                                           
-    [ $(grep -E -e $timestamp.\*EQR.tiff $DSTDIRLIST 2>/dev/null | wc -l) -ne 29 ] && echo $timestamp
+    checkeqrcount $timestamp && echo $timestamp
   done
-}       
+}
 
-# return shuffled (progressive) timestamp list,                                                                                                                                                                    
+# return shuffled (progressive) timestamp list,
 # reducing the step by half recursively
 shuffile() {
   argv=($(cat "$FILELIST" | getTimestamps))
@@ -255,7 +252,7 @@ shuffile() {
       if [ -n "$stamp" ] ; then
         argv[$i]=
         jp4_count=$(grep -e $stamp "$FILELIST" | wc -l)
-        if [ $jp4_count -eq 9 ] ; then
+        if [ $jp4_count -eq $CAMERACOUNT ] ; then
           echo $stamp
         else
           echo "Warning: $stamp discarded (jp4 count is $jp4_count)" >&2
@@ -266,7 +263,7 @@ shuffile() {
       stamp=${argv[$last]}
       argv[$last]=
       jp4_count=$(grep -e $stamp "$FILELIST" | wc -l)
-      if [ $jp4_count -eq 9 ] ; then
+      if [ $jp4_count -eq $CAMERACOUNT ] ; then
         echo $stamp
       else
         echo "Warning: $stamp discarded (jp4 count is $jp4_count)" >&2
@@ -296,16 +293,16 @@ getfilelist() {
 export COUNT=0
 export FOLDER_NUM=0
 doit() {
-  if (( $SPLITAT > 9 )) ; then
+  if (( $SPLITAT > $CAMERACOUNT )) ; then
     OUTXML=$SRCDIR/../post_processing/${NOW}.xml
-    corrxml.sh $SHUFFLE $XML $SRCDIR $DSTDIR $OUTXML $SPLITAT
+    corrxml.sh $SHUFFLE $IMAGEJ_ELPHEL_XML $SRCDIR $DSTDIR $OUTXML $SPLITAT
     find $(dirname $OUTXML) -maxdepth 1 -type f -name $(basename $OUTXML .xml)\* | sort
   else
     # FILELIST is also used in corrxml.sh
     export FILELIST
     getfilelist | while read TIMESTAMP ; do
       OUTXML=$SRCDIR/../post_processing/${NOW}-$TIMESTAMP.xml
-      corrxml.sh $XML $SRCDIR $DSTDIR/$FOLDER_NUM $OUTXML $SPLITAT $TIMESTAMP $TRUNCATE
+      corrxml.sh $IMAGEJ_ELPHEL_XML $SRCDIR $DSTDIR/$FOLDER_NUM $OUTXML $SPLITAT $TIMESTAMP $TRUNCATE
       find $(dirname $OUTXML) -maxdepth 1 -type f -name $(basename $OUTXML .xml)\* | sort
       ((COUNT+=SPLITAT))
       if [ $COUNT -ge $FOLDER_MAX ] ; then
@@ -314,6 +311,30 @@ doit() {
       fi
     done
   fi
+}
+
+# check whether timestamp already processed
+checkeqrcount() {
+  EQRCOUNT=0
+  HALFEQRCOUNT=0
+  for ((i=0; i<$SUBCAMERACOUNT; ++i)) ; do
+    CHAN=$(printf %02d $i)
+    # find is too slow, use test instead
+    test -e $DSTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR.tiff && ((++EQRCOUNT)) && continue
+    test -e $DSTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR-LEFT.tiff &&
+    test -e $DSTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR-RIGHT.tiff && ((++EQRCOUNT))
+  done
+  test $EQRCOUNT == $SUBCAMERACOUNT
+}
+
+# print usage and exit if given environment variables are not set
+assertenv() {
+  for name in $@ ; do
+    if [ -z "$(printenv $name)" ] ; then
+      echo error: $name is not set ! >&2
+      usage
+    fi
+  done
 }
 
 main "$@"

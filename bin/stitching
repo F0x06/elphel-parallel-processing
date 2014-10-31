@@ -46,7 +46,8 @@ usage() {
     exit 1
   fi
 
-  cat | less << EOF 
+  cat | less -F  << EOF 
+
 SYNOPSIS:
 
     $(basename $0) [OPTION...] <sourceDir>  <destDir> [ -o <script> ]
@@ -78,6 +79,7 @@ OPTIONS SUMMARY:
     -r,--run                       start processing immediately in queue mode
     -p,--parallel <options>        when -r is specified, set gnu parallel options
     -l,--logdir <path>             set log directory
+    -f,--filelist <file_list>      files to process. <sourceDir> will be ignored
 
     -m,--method enblend|multiblend set stitching method
     -b,--black <black point>       set black point
@@ -127,6 +129,8 @@ init() {
 
   SRCDIR=$(realpath "$1")
   DSTDIR=$(realpath "$2")
+
+  assertenv SRCDIR DSTDIR
 
   cd $HOME 
 
@@ -267,6 +271,16 @@ shuffile() {
     fi
     [ $step -eq 1 ] && break
     ((step/=2))
+  done
+}
+
+# print usage and exit if given environment variables are not set
+assertenv() {
+  for name in $@ ; do
+    if [ -z "$(printenv $name)" ] ; then
+      echo error: $name is not set ! >&2
+      usage                                                                                                           
+    fi
   done
 }
 

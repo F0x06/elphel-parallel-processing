@@ -46,10 +46,10 @@ checkeqrcount() {
     CHAN=$(printf %02d $i)
     # find is too slow, use test instead
     test -e $DESTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR.tiff && ((++EQRCOUNT))
-    test -e $DESTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR-LEFT.tiff && ((++HALFEQRCOUNT))
-    test -e $DESTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR-RIGHT.tiff && ((++HALFEQRCOUNT))
+    test -e $DESTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR-LEFT.tiff &&
+    test -e $DESTDIR/${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR-RIGHT.tiff && ((++EQRCOUNT))
   done
-  test $((EQRCOUNT+HALFEQRCOUNT/2)) == $SUBCAMERAS
+  test $EQRCOUNT == $SUBCAMERAS
 }
 
 [ -n "$DEBUG" ] && set -x
@@ -69,7 +69,7 @@ DESTDIR=$(grep CORRECTION_PARAMETERS.resultsDirectory $IMAGEJ_ELPHEL_XML | sed -
 BASE=$(basename $IMAGEJ_ELPHEL_XML)
 TIMESTAMP=${BASE:11:17}
 
-# TODO: add it in post_processing generated shebang, from XML property CAMERAS.channelMap.length
+# TODO: pass SUBCAMERAS in post_processing generated shebang, from XML property CAMERAS.channelMap.length
 SUBCAMERAS=$(grep CAMERAS.channelMap.length $IMAGEJ_ELPHEL_XML | sed -r -e 's/.*>([^<]+).*/\1/')
 
 # assume there's only 1 timestamp in the XML
