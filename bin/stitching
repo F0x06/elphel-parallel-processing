@@ -57,10 +57,13 @@ DESCRIPTION:
     Generate a script to process unprocessed files from <sourceDir> and place
     the resulting files in <destDir>, using GNU parallel.
 
-CONSTRAINTS:
+    With recent GNU parallel versions from http://gnu.org/s/parallel, the
+    sshloginfile can be modified at runtime (to change the local or remote
+    number of jobs to run in parallel)
 
-    You must specify GNU parallel options after the output script name, or
-    they can be specified in the PARALLEL environment variable.
+    Arguments for the output scripts are passed to GNU parallel. They can also
+    be specified in the PARALLEL environment variable (or with the -p option
+    when queue mode is enabled with --run).
 
 QUEUE MODE:
 
@@ -85,6 +88,18 @@ OPTIONS SUMMARY:
     -b,--black <black point>       set black point
     -w,--white <white point>       set white point
     -q,--quality <quality>         set jpeg quality
+
+EXAMPLES:
+
+    # generate script first, then run it
+    $ stitching -s /data/footage/1412953653-00-0E-64-08-1C-D2/tiles/DECONV-RGB24_EQR/ /data/footage/1412953653-00-0E-64-08-1C-D2/panoramas/enblend -o /data/footage/1412953653-00-0E-64-08-1C-D2/stitching.sh
+    $ /data/footage/1412953653-00-0E-64-08-1C-D2/stitching.sh -j30
+
+    # run in queue mode, start processing while script is generated
+    $ stitching  -r -p "-j30" -s /data/footage/1412953653-00-0E-64-08-1C-D2/tiles/DECONV-RGB24_EQR/ /data/footage/1412953653-00-0E-64-08-1C-D2/panoramas/enblend -o /data/footage/1412953653-00-0E-64-08-1C-D2/stitching.sh
+
+    # resume execution after interruption
+    /data/footage/1412953653-00-0E-64-08-1C-D2/stitching.sh -j30
 
 EOF
   exit 1
