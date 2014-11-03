@@ -130,7 +130,7 @@ init() {
   SRCDIR=$(realpath "$1")
   DSTDIR=$(realpath "$2")
 
-  assertenv SRCDIR DSTDIR
+#  assertenv SRCDIR DSTDIR
 
   cd $HOME
 

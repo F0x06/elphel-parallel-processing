@@ -57,10 +57,13 @@ DESCRIPTION:
     Generate a script to process unprocessed files from <sourceDir> and place
     the resulting files in <destDir>, using GNU parallel.
 
-CONSTRAINTS:
-
-    You must specify GNU parallel options after the output script name, or
-    they can be specified in the PARALLEL environment variable.
+    With recent GNU parallel versions from http://gnu.org/s/parallel, the
+    sshloginfile can be modified at runtime (to change the local or remote
+    number of jobs to run in parallel)
+    
+    Arguments for the output scripts are passed to GNU parallel. They can also
+    be specified in the PARALLEL environment variable (or with the -p option
+    when queue mode is enabled with --run).
 
 QUEUE MODE:
 
@@ -88,6 +91,18 @@ OPTIONS SUMMARY:
     -t,--truncate               eg if split == 8 and you dont want the 9th jp4
                                 to be put in the next xml
     -M,--folder-max             maximum number of files per output directory
+
+EXAMPLES: 
+
+    # generate script first, then run it
+    post_processing -s /data/footage/1412953653-00-0E-64-08-1C-D2/jp4/ /data/footage/1412953653-00-0E-64-08-1C-D2/tiles -o /data/footage/1412953653-00-0E-64-08-1C-D2/post_processing.sh
+    /data/footage/1412953653-00-0E-64-08-1C-D2/post_processing.sh -j30
+
+    # run in queue mode, start processing while script is generated
+    post_processing  -r -p "-j30" -s /data/footage/1412953653-00-0E-64-08-1C-D2/jp4/ /data/footage/1412953653-00-0E-64-08-1C-D2/tiles -o /data/footage/1412953653-00-0E-64-08-1C-D2/post_processing.sh
+
+    # resume execution after interruption
+    /data/footage/1412953653-00-0E-64-08-1C-D2/post_processing.sh -j30
 
 EOF
   exit 1
@@ -138,7 +153,7 @@ init() {
   SRCDIR=$(realpath "$1")
   DSTDIR=$(realpath "$2")
 
-  assertenv IMAGEJ_ELPHEL_XML SRCDIR DSTDIR
+  #assertenv IMAGEJ_ELPHEL_XML SRCDIR DSTDIR
 
   SUBCAMERACOUNT=$(grep CAMERAS.channelMap.length $IMAGEJ_ELPHEL_XML | sed -r -e 's/.*>([^<]+).*/\1/')
   CAMERACOUNT=$(grep CAMERAS.cameraIPs.length $IMAGEJ_ELPHEL_XML | sed -r -e 's/.*>([^<]+).*/\1/')
@@ -239,7 +254,7 @@ getTimestamps() {
       export DSTDIRLIST=$(mktemp -u --tmpdir=/dev/shm)
       find  "$DSTDIR" -name \*EQR\*.tiff > $DSTDIRLIST
     fi                                                                                                                                                                                                           
-    checkeqrcount $timestamp && echo $timestamp
+    checkeqrcount $timestamp || echo $timestamp
   done
 }
 
@@ -323,7 +338,6 @@ doit() {
 checkeqrcount() {
   TIMESTAMP=$1
   EQRCOUNT=0
-  HALFEQRCOUNT=0
   for ((i=0; i<$SUBCAMERACOUNT; ++i)) ; do
     CHAN=$(printf %02d $i)
     grep -q ${TIMESTAMP}-${CHAN}-DECONV-RGB24_EQR.tiff $DSTDIRLIST && ((++EQRCOUNT)) && continue
