@@ -1,4 +1,4 @@
-INSTALL_PATH?=/usr/local
+INSTALL_PATH?=${HOME}
 
 all: install
 
