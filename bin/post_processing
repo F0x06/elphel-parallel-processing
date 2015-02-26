@@ -130,14 +130,14 @@ init() {
       case $1 in
       -h|--help) usage $1 ;;
       -s|--shuffle) SHUFFLE="yes" ;;
-      -o|--output) OUTPUT=$2 ; shift ;;
+      -o|--output) OUTPUT=$2 ; [ "${OUTPUT:0:1}" != '/' ] && OUTPUT=$(pwd)/$OUTPUT ; shift ;;
       -r|--run) RUN=yes ;;
       -p|--parallel) export PARALLEL=$2 ; shift ;;
       -l|--logdir) LOGDIR=$2 ; shift ;;
-      -x|--xml) IMAGEJ_ELPHEL_XML=$2 ; shift ;;
+      -x|--xml) IMAGEJ_ELPHEL_XML=$(realpath $2) ; [ -z "$IMAGEJ_ELPHEL_XML" ] && exit ; shift ;;
       -m|--mem) IMAGEJMEM=$2 ; shift ;;
       -M|--folder-max) FOLDER_MAX=$2 ; shift ;;
-      -f|--filelist) FILELIST=$2 ; shift ;;
+      -f|--filelist) FILELIST=$(realpath $2) ; [ -z "$FILELIST" ] && exit ; shift ;;
       -S|--split-at) SPLITAT=$2 ; shift ;;
       -t|--truncate) TRUNCATE=yes ;;
       (--) shift; break;;
@@ -247,15 +247,17 @@ getTimestamps() {
     JP4=$(basename $JP4)
     echo ${JP4:0:17}
   done |
-  sort -u |
-  while read timestamp ; do
+  sort -u 
+#  |
+#  while read timestamp ; do
     # echo timestamp only if theres not yet 29 files with it
-    if [ -z "$DSTDIRLIST" ] ; then
-      export DSTDIRLIST=$(mktemp -u --tmpdir=/dev/shm)
-      find  "$DSTDIR" -name \*EQR\*.tiff > $DSTDIRLIST
-    fi                                                                                                                                                                                                           
-    checkeqrcount $timestamp || echo $timestamp
-  done
+#    if [ -z "$DSTDIRLIST" ] ; then
+#      export DSTDIRLIST=$(mktemp -u --tmpdir=/dev/shm)
+#      find  "$DSTDIR" -name \*EQR\*.tiff > $DSTDIRLIST
+#    fi
+    #checkeqrcount $timestamp || echo $timestamp
+#    echo 
+#  done
 }
 
 # return shuffled (progressive) timestamp list,
@@ -316,15 +318,13 @@ export FOLDER_NUM=0
 doit() {
   if (( $SPLITAT > $CAMERACOUNT )) ; then
     OUTXML=$SRCDIR/../post_processing/${NOW}.xml
-    corrxml.sh $SHUFFLE $IMAGEJ_ELPHEL_XML $SRCDIR $DSTDIR $OUTXML $SPLITAT
-    find $(dirname $OUTXML) -maxdepth 1 -type f -name $(basename $OUTXML .xml)\* | sort
+    corrxml.sh $SHUFFLE $IMAGEJ_ELPHEL_XML $SRCDIR $DSTDIR $OUTXML $SPLITAT | sort
   else
     # FILELIST is also used in corrxml.sh
     export FILELIST
     getfilelist | while read TIMESTAMP ; do
       OUTXML=$SRCDIR/../post_processing/${NOW}-$TIMESTAMP.xml
-      corrxml.sh $IMAGEJ_ELPHEL_XML $SRCDIR $DSTDIR/$FOLDER_NUM $OUTXML $SPLITAT $TIMESTAMP $TRUNCATE
-      find $(dirname $OUTXML) -maxdepth 1 -type f -name $(basename $OUTXML .xml)\* | sort
+      corrxml.sh $IMAGEJ_ELPHEL_XML $SRCDIR $DSTDIR/$FOLDER_NUM $OUTXML $SPLITAT $TIMESTAMP $TRUNCATE | sort
       ((COUNT+=SPLITAT))
       if [ $COUNT -ge $FOLDER_MAX ] ; then
         ((++FOLDER_NUM))
