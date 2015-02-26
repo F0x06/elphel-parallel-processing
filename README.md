@@ -2,7 +2,7 @@
 
 ### Documentation
 
-Documentation can be consulted on the [wiki](https://github.com/luxigo/elphel-parallel-post-processing/wiki).
+Documentation can be consulted on the [wiki](https://github.com/F0x06/elphel-parallel-processing/wiki).
 
 ### Copyright
 
