@@ -207,7 +207,7 @@ main() {
   if [ "$RUN" == "true" -o "$RUN" == "yes" ] ; then
     # run in queue mode
     echo "#### running $OUTPUT" 1>&2
-    listUnprocessedTimestamps | tee -a "$OUTPUT" | parallel --gnu -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ -q $QUALITY -b ${BLACKPOINT} -w ${WHITEPOINT} -m ${METHOD} \| $REMOTELOGGER $OUTPUT
+    listUnprocessedTimestamps | tee -a "$OUTPUT" | parallel --gnu --retries 5 -I _TIMESTAMP_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT $SRCDIR $DSTDIR _TIMESTAMP_ -q $QUALITY -b ${BLACKPOINT} -w ${WHITEPOINT} -m ${METHOD} \| $REMOTELOGGER $OUTPUT
 
   else
     # or generate output script

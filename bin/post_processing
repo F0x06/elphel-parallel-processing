@@ -60,7 +60,7 @@ DESCRIPTION:
     With recent GNU parallel versions from http://gnu.org/s/parallel, the
     sshloginfile can be modified at runtime (to change the local or remote
     number of jobs to run in parallel)
-    
+
     Arguments for the output scripts are passed to GNU parallel. They can also
     be specified in the PARALLEL environment variable (or with the -p option
     when queue mode is enabled with --run).
@@ -92,7 +92,7 @@ OPTIONS SUMMARY:
                                 to be put in the next xml
     -M,--folder-max             maximum number of files per output directory
 
-EXAMPLES: 
+EXAMPLES:
 
     # generate script first, then run it
     post_processing -s /data/footage/1412953653-00-0E-64-08-1C-D2/jp4/ /data/footage/1412953653-00-0E-64-08-1C-D2/tiles -o /data/footage/1412953653-00-0E-64-08-1C-D2/post_processing.sh
@@ -217,7 +217,7 @@ main() {
   if [ "$RUN" == "true" -o "$RUN" == "yes" ] ; then
     # run in queue mode
     echo "#### running $OUTPUT" 1>&2
-    doit | tee -a "$OUTPUT" | parallel --gnu -I _XML_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \| $REMOTELOGGER $OUTPUT
+    doit | tee -a "$OUTPUT" | parallel --gnu --retries 5 -I _XML_ --ungroup --joblog $LOGDIR/$(basename $OUTPUT).log --bf $REMOTESCRIPT --bf $REMOTELOGGER $REMOTESCRIPT _XML_ $IMAGEJMEM \| $REMOTELOGGER $OUTPUT
 
   else
     # or generate output script
@@ -247,7 +247,7 @@ getTimestamps() {
     JP4=$(basename $JP4)
     echo ${JP4:0:17}
   done |
-  sort -u 
+  sort -u
 #  |
 #  while read timestamp ; do
     # echo timestamp only if theres not yet 29 files with it
@@ -256,7 +256,7 @@ getTimestamps() {
 #      find  "$DSTDIR" -name \*EQR\*.tiff > $DSTDIRLIST
 #    fi
     #checkeqrcount $timestamp || echo $timestamp
-#    echo 
+#    echo
 #  done
 }
 
